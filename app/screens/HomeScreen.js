@@ -13,14 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 
 export default function HomeScreen() {
   const { user } = useContext(AuthContext);
-  const themeContext = useTheme();
-  const theme = themeContext?.theme || {
-    background: "#f5f5f5",
-    surface: "#ffffff",
-    text: "#000000",
-    textSecondary: "#666666",
-    primary: "#6200EE",
-  };
+  const { theme } = useTheme();
   const navigation = useNavigation();
 
   const subjects = [
@@ -29,36 +22,39 @@ export default function HomeScreen() {
     { id: "3", name: "English", icon: "📚", color: "#95E1D3" },
     { id: "4", name: "History", icon: "📜", color: "#FFE66D" },
     { id: "5", name: "Geography", icon: "🌍", color: "#98D8C8" },
-    { id: "6", name: "Programming", icon: "💻", color: "#845EC2" },
+    { id: "6", name: "Sign Language", icon: "🤟", color: "#845EC2" },
+  ];
+
+  // Study materials for quick access
+  const studyMaterials = [
+    { id: "1", name: "Mathematics", icon: "🔢", color: "#FF6B6B" },
+    { id: "2", name: "Science", icon: "🔬", color: "#4ECDC4" },
+    { id: "3", name: "English", icon: "📚", color: "#95E1D3" },
+    { id: "4", name: "Sign Language", icon: "🤟", color: "#845EC2" },
   ];
 
   const handleSubjectPress = (subject) => {
-    // Use getParent() to navigate to screens outside the tab navigator
-    const parentNav = navigation.getParent();
-    if (parentNav) {
-      parentNav.navigate("TakeTest", {
-        subject,
-        grade: user?.grade || "12",
-      });
-    }
+    // Navigate to SubjectDetails to show topics
+    navigation.navigate("SubjectDetails", {
+      subject,
+      grade: user?.grade || "12",
+    });
   };
 
   const handleQuickTest = () => {
-    const parentNav = navigation.getParent();
-    if (parentNav) {
-      parentNav.navigate("TakeTest", {
-        grade: user?.grade || "12",
-      });
-    }
+    // Navigate to grade selection first
+    navigation.navigate("GradeSelection", {
+      fromScreen: "Home",
+    });
   };
 
   const handleLearnMore = () => {
-    const parentNav = navigation.getParent();
-    if (parentNav) {
-      parentNav.navigate("LearnMore", {
-        grade: user?.grade || "12",
-      });
-    }
+    // Navigate to LearnMoreScreen with Mathematics as default
+    const mathSubject = subjects[0];
+    navigation.navigate("LearnMore", {
+      subject: mathSubject,
+      grade: user?.grade || "12",
+    });
   };
 
   return (
@@ -101,7 +97,7 @@ export default function HomeScreen() {
               style={[styles.actionCard, { backgroundColor: theme.surface }]}
               onPress={handleLearnMore}
             >
-              <Text style={styles.actionIcon}>📚</Text>
+              <Text style={styles.actionIcon}>📖</Text>
               <Text style={[styles.actionText, { color: theme.text }]}>
                 Learn More
               </Text>
@@ -109,10 +105,41 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Subjects */}
+        {/* Study Materials - Featured Subjects */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            Choose a Subject
+            Study Materials
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.horizontalScroll}
+          >
+            {studyMaterials.map((subject) => (
+              <TouchableOpacity
+                key={subject.id}
+                style={[
+                  styles.materialCard,
+                  {
+                    backgroundColor: theme.surface,
+                    borderColor: subject.color,
+                  },
+                ]}
+                onPress={() => handleSubjectPress(subject)}
+              >
+                <Text style={styles.materialIcon}>{subject.icon}</Text>
+                <Text style={[styles.materialName, { color: theme.text }]}>
+                  {subject.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* All Subjects */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            All Subjects
           </Text>
           <View style={styles.subjectsGrid}>
             {subjects.map((subject) => (
@@ -194,6 +221,32 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 16,
     fontWeight: "600",
+    textAlign: "center",
+  },
+  horizontalScroll: {
+    marginBottom: 10,
+  },
+  materialCard: {
+    width: 120,
+    padding: 15,
+    borderRadius: 12,
+    marginRight: 12,
+    alignItems: "center",
+    borderWidth: 2,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  materialIcon: {
+    fontSize: 40,
+    marginBottom: 8,
+  },
+  materialName: {
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
   },
   subjectsGrid: {
     flexDirection: "row",

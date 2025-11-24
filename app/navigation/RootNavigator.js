@@ -12,6 +12,13 @@ import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
 import MainTab from "./MainTab";
 import TakeTestScreen from "../screens/TakeTestScreen";
 import LearnMoreScreen from "../screens/LearnMoreScreen";
+import SubjectDetailsScreen from "../screens/SubjectDetailsScreen";
+import TopicQuestionsScreen from "../screens/TopicQuestionsScreen";
+import SignLanguageLearnScreen from "../screens/SignLanguageLearnScreen";
+import QuizScreen from "../screens/QuizScreen";
+import ResultScreen from "../screens/ResultScreen";
+import AllSubjectsTestScreen from "../screens/AllSubjectsTestScreen";
+import GradeSelectionScreen from "../screens/GradeSelectionScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -31,6 +38,30 @@ export default function RootNavigator() {
           <Stack.Screen name="MainApp" component={MainTab} />
           <Stack.Screen name="TakeTest" component={TakeTestScreen} />
           <Stack.Screen name="LearnMore" component={LearnMoreScreen} />
+          <Stack.Screen
+            name="SubjectDetails"
+            component={SubjectDetailsScreen}
+          />
+          <Stack.Screen
+            name="TopicQuestions"
+            component={TopicQuestionsScreen}
+          />
+          <Stack.Screen
+            name="SignLanguageLearn"
+            component={SignLanguageLearnScreen}
+          />
+          <Stack.Screen name="Quiz" component={QuizScreen} />
+          <Stack.Screen name="Result" component={ResultScreen} />
+          <Stack.Screen
+            name="AllSubjectsTest"
+            component={AllSubjectsTestScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="GradeSelection"
+            component={GradeSelectionScreen}
+            options={{ headerShown: false }}
+          />
         </>
       ) : (
         // User is not authenticated - show auth screens
