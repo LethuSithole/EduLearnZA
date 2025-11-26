@@ -34,11 +34,16 @@ export default function HomeScreen() {
   ];
 
   const handleSubjectPress = (subject) => {
-    // Navigate to SubjectDetails to show topics
-    navigation.navigate("SubjectDetails", {
-      subject,
-      grade: user?.grade || "12",
-    });
+    // Check if Sign Language and navigate accordingly
+    if (subject.name === "Sign Language") {
+      navigation.navigate("SignLanguage"); // Make sure this matches the screen name in App.js
+    } else {
+      // Navigate to SubjectDetails to show topics
+      navigation.navigate("SubjectDetails", {
+        subject,
+        grade: user?.grade || "12",
+      });
+    }
   };
 
   const handleQuickTest = () => {

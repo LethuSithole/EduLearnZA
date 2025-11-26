@@ -1,64 +1,69 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
-  Alert,
+  StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AuthContext } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import authService from "../services/authService";
 
 export default function ForgotPasswordScreen({ navigation }) {
-  const { resetPassword } = useContext(AuthContext);
-  const themeContext = useTheme();
-  const theme = themeContext?.theme || {
-    background: "#f5f5f5",
-    surface: "#ffffff",
-    text: "#000000",
-    textSecondary: "#666666",
-    primary: "#6200EE",
-    border: "#e0e0e0",
-    placeholderText: "#999999",
-  };
-
+  const { theme } = useTheme();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
-  const handleResetPassword = async () => {
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
+  const handleSendResetLink = async () => {
     if (!email.trim()) {
       Alert.alert("Error", "Please enter your email address");
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!validateEmail(email)) {
       Alert.alert("Error", "Please enter a valid email address");
       return;
     }
 
     setLoading(true);
-    const result = await resetPassword(email.trim());
-    setLoading(false);
 
-    if (result.success) {
-      Alert.alert(
-        "Success",
-        "Password reset email sent! Please check your inbox.",
-        [
+    try {
+      // Use mock implementation for demo
+      const result = await authService.sendPasswordResetEmailMock(email);
+
+      if (result.success) {
+        setEmailSent(true);
+        Alert.alert("Email Sent! ✉️", result.message, [
           {
             text: "OK",
-            onPress: () => navigation.navigate("Login"),
+            onPress: () => {
+              // For demo, navigate to reset password screen
+              navigation.navigate("ResetPassword", {
+                email: email,
+                token: result.token,
+              });
+            },
           },
-        ]
-      );
-    } else {
-      Alert.alert("Error", result.error);
+        ]);
+      } else {
+        Alert.alert("Error", result.error);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,76 +75,120 @@ export default function ForgotPasswordScreen({ navigation }) {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
-        <View style={styles.content}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Header */}
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={[styles.backText, { color: theme.primary }]}>
-              ← Back to Login
-            </Text>
-          </TouchableOpacity>
-
           <View style={styles.header}>
-            <Text style={styles.icon}>🔒</Text>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={[styles.backButtonText, { color: theme.primary }]}>
+                ← Back to Login
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={styles.icon}>🔐</Text>
             <Text style={[styles.title, { color: theme.text }]}>
               Forgot Password?
             </Text>
             <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-              No worries! Enter your email and we'll send you a reset link.
+              {emailSent
+                ? "Check your email for reset instructions"
+                : "Enter your email and we'll send you a reset link"}
             </Text>
           </View>
 
           {/* Form */}
-          <View style={styles.form}>
-            <View
-              style={[
-                styles.inputContainer,
-                { backgroundColor: theme.surface },
-              ]}
-            >
-              <Text style={styles.inputIcon}>📧</Text>
-              <TextInput
-                style={[styles.input, { color: theme.text }]}
-                placeholder="Email"
-                placeholderTextColor={theme.placeholderText}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
+          <View style={[styles.form, { backgroundColor: theme.surface }]}>
+            {!emailSent && (
+              <>
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: theme.text }]}>
+                    Email Address
+                  </Text>
+                  <View
+                    style={[
+                      styles.inputWrapper,
+                      {
+                        backgroundColor: theme.background,
+                        borderColor: theme.border,
+                      },
+                    ]}
+                  >
+                    <Text style={styles.inputIcon}>📧</Text>
+                    <TextInput
+                      style={[styles.input, { color: theme.text }]}
+                      placeholder="Enter your email"
+                      placeholderTextColor={theme.textSecondary}
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      editable={!loading}
+                    />
+                  </View>
+                </View>
 
-            <TouchableOpacity
-              style={[
-                styles.resetButton,
-                loading && styles.resetButtonDisabled,
-              ]}
-              onPress={handleResetPassword}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.resetButtonText}>Send Reset Link</Text>
-              )}
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.sendButton,
+                    {
+                      backgroundColor: theme.primary,
+                      opacity: loading ? 0.6 : 1,
+                    },
+                  ]}
+                  onPress={handleSendResetLink}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.sendButtonText}>Send Reset Link</Text>
+                  )}
+                </TouchableOpacity>
+              </>
+            )}
+
+            {emailSent && (
+              <View style={styles.successContainer}>
+                <Text style={styles.successIcon}>✅</Text>
+                <Text style={[styles.successText, { color: theme.text }]}>
+                  Reset link sent to:
+                </Text>
+                <Text style={[styles.emailText, { color: theme.primary }]}>
+                  {email}
+                </Text>
+                <TouchableOpacity
+                  style={[styles.resendButton, { borderColor: theme.primary }]}
+                  onPress={() => {
+                    setEmailSent(false);
+                    setEmail("");
+                  }}
+                >
+                  <Text
+                    style={[styles.resendButtonText, { color: theme.primary }]}
+                  >
+                    Try Another Email
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
 
-          {/* Additional Info */}
-          <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: theme.textSecondary }]}>
-              Remember your password?{" "}
+          {/* Info */}
+          <View style={[styles.infoCard, { backgroundColor: theme.surface }]}>
+            <Text style={styles.infoIcon}>💡</Text>
+            <Text style={[styles.infoText, { color: theme.textSecondary }]}>
+              <Text style={{ fontWeight: "bold" }}>Tip:</Text> If you don't
+              receive an email within 5 minutes, check your spam folder or try
+              again.
             </Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-              <Text style={[styles.footerLink, { color: theme.primary }]}>
-                Log In
-              </Text>
-            </TouchableOpacity>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -152,91 +201,132 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     padding: 20,
-    justifyContent: "center",
-  },
-  backButton: {
-    marginBottom: 20,
-  },
-  backText: {
-    fontSize: 16,
-    fontWeight: "600",
   },
   header: {
     alignItems: "center",
-    marginBottom: 40,
+    marginTop: 20,
+    marginBottom: 30,
+  },
+  backButton: {
+    alignSelf: "flex-start",
+    marginBottom: 30,
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   icon: {
-    fontSize: 64,
+    fontSize: 80,
     marginBottom: 20,
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
     marginBottom: 10,
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: 24,
   },
   form: {
-    gap: 20,
+    padding: 24,
+    borderRadius: 16,
+    marginBottom: 20,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   inputContainer: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 5,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+  },
+  inputIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    padding: 16,
+    fontSize: 16,
+  },
+  sendButton: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  sendButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  successContainer: {
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  successIcon: {
+    fontSize: 60,
+    marginBottom: 20,
+  },
+  successText: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 10,
+  },
+  emailText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 30,
+  },
+  resendButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+  },
+  resendButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  infoCard: {
+    flexDirection: "row",
+    padding: 16,
+    borderRadius: 12,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
-  inputIcon: {
+  infoIcon: {
     fontSize: 24,
-    marginRight: 10,
+    marginRight: 12,
   },
-  input: {
+  infoText: {
     flex: 1,
-    fontSize: 16,
-    paddingVertical: 15,
-  },
-  resetButton: {
-    backgroundColor: "#6200EE",
-    paddingVertical: 18,
-    borderRadius: 12,
-    alignItems: "center",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    marginTop: 10,
-  },
-  resetButtonDisabled: {
-    opacity: 0.6,
-  },
-  resetButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 30,
-  },
-  footerText: {
-    fontSize: 16,
-  },
-  footerLink: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 14,
+    lineHeight: 20,
   },
 });

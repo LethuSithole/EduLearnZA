@@ -11,8 +11,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
 
-export default function SubjectDetailsScreen({ navigation, route }) {
-  const { subject } = route.params || {};
+export default function SubjectDetailsScreen({ route, navigation }) {
+  const { subject, grade } = route.params;
   const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
 
@@ -66,18 +66,12 @@ export default function SubjectDetailsScreen({ navigation, route }) {
   const topics = getTopicsBySubject();
 
   const handleTopicPress = (topic) => {
-    if (subject?.name === "Sign Language") {
-      // Navigate to Sign Language Learn screen with both subject and topic
-      navigation.navigate("SignLanguageLearn", {
-        subject: subject,
-        topic: topic,
-      });
-    } else {
-      navigation.navigate("TopicQuestions", {
-        subject: subject,
-        topic: topic,
-      });
-    }
+    // Now this should work since TopicQuestions is in the same Stack Navigator
+    navigation.navigate("TopicQuestions", {
+      subject,
+      topic,
+      grade,
+    });
   };
 
   return (

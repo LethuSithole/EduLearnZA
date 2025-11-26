@@ -5,1164 +5,484 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
-import { fetchQuestionsByTopic } from "../config/quizApi";
 
 export default function TopicQuestionsScreen({ navigation, route }) {
-  const { subject, topic, grade } = route.params || {};
+  const { subject, topic, grade } = route.params;
   const { theme } = useTheme();
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [score, setScore] = useState(0);
+  const [answeredQuestions, setAnsweredQuestions] = useState([]);
+  const [testComplete, setTestComplete] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const questionsPerPage = 10;
 
   useEffect(() => {
-    fetchQuestions();
-  }, [grade]); // Re-fetch when grade changes
+    // Load questions directly (skip API for now)
+    setTimeout(() => {
+      setQuestions(generateMockQuestions());
+      setLoading(false);
+    }, 500);
+  }, []);
 
-  // Mock questions generator with realistic content
-  const generateMockQuestions = (subjectName, topicName, count = 100) => {
-    const mockQuestions = [];
+  const generateMockQuestions = () => {
+    const subjectName = subject.name.toLowerCase();
 
-    const questionTemplates = {
-      Mathematics: {
-        Algebra: [
-          {
-            q: "Solve for x: 2x + 5 = 15",
-            opts: ["x = 5", "x = 10", "x = 7.5", "x = 20"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Simplify: 3(x + 4) - 2x",
-            opts: ["x + 12", "x + 4", "5x + 12", "x + 8"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Factor: x² - 9",
-            opts: ["(x-3)(x+3)", "(x-9)(x+1)", "(x-3)²", "x(x-9)"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Solve: x² - 5x + 6 = 0",
-            opts: [
-              "x = 2 or x = 3",
-              "x = 1 or x = 6",
-              "x = -2 or x = -3",
-              "x = 5 or x = 1",
-            ],
-            ans: "A",
-            diff: "Hard",
-          },
-          {
-            q: "What is the slope of y = 3x + 7?",
-            opts: ["3", "7", "-3", "10"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Expand: (x + 2)²",
-            opts: ["x² + 4x + 4", "x² + 2x + 4", "x² + 4", "x² + 4x + 2"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Solve: 4x - 8 = 2x + 6",
-            opts: ["x = 7", "x = 14", "x = 3.5", "x = -1"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "What is x if 3x/5 = 9?",
-            opts: ["x = 15", "x = 27", "x = 9", "x = 45"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Factor: 2x² + 7x + 3",
-            opts: ["(2x+1)(x+3)", "(2x+3)(x+1)", "(x+1)(x+3)", "2(x+1)(x+3)"],
-            ans: "A",
-            diff: "Hard",
-          },
-          {
-            q: "Simplify: (2x³)²",
-            opts: ["4x⁶", "2x⁶", "4x⁵", "2x⁵"],
-            ans: "A",
-            diff: "Medium",
-          },
-        ],
-        Geometry: [
-          {
-            q: "Area of a circle with radius 5?",
-            opts: ["25π", "10π", "5π", "50π"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Sum of angles in a triangle?",
-            opts: ["180°", "360°", "90°", "270°"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Pythagoras theorem: a² + b² = ?",
-            opts: ["c²", "c", "2c", "√c"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Area of rectangle 8m × 5m?",
-            opts: ["40 m²", "13 m²", "40 m", "26 m"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Volume of cube with side 3cm?",
-            opts: ["27 cm³", "9 cm³", "18 cm³", "6 cm³"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Circumference of circle, radius 7?",
-            opts: ["14π", "7π", "49π", "21π"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Number of sides in a hexagon?",
-            opts: ["6", "5", "7", "8"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Area of triangle: base=10, height=6?",
-            opts: ["30", "60", "16", "40"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Interior angle of regular pentagon?",
-            opts: ["108°", "90°", "120°", "135°"],
-            ans: "A",
-            diff: "Hard",
-          },
-          {
-            q: "Surface area of cube, side 4?",
-            opts: ["96", "64", "48", "24"],
-            ans: "A",
-            diff: "Medium",
-          },
-        ],
-        Calculus: [
-          {
-            q: "Derivative of x²?",
-            opts: ["2x", "x", "x²", "2"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Integral of 2x?",
-            opts: ["x² + C", "2x² + C", "x + C", "2x + C"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Derivative of sin(x)?",
-            opts: ["cos(x)", "-cos(x)", "sin(x)", "-sin(x)"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Derivative of e^x?",
-            opts: ["e^x", "xe^(x-1)", "e", "1"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "What is d/dx(3x³)?",
-            opts: ["9x²", "3x²", "x³", "9x³"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Integral of cos(x)?",
-            opts: ["sin(x) + C", "-sin(x) + C", "cos(x) + C", "tan(x) + C"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Derivative of ln(x)?",
-            opts: ["1/x", "x", "ln(x)", "e^x"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Chain rule: d/dx[f(g(x))] = ?",
-            opts: ["f'(g(x))·g'(x)", "f'(x)·g'(x)", "f(g'(x))", "f'(x)+g'(x)"],
-            ans: "A",
-            diff: "Hard",
-          },
-          {
-            q: "Derivative of x³ + 2x?",
-            opts: ["3x² + 2", "x² + 2", "3x² + 2x", "3x³ + 2"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "What is ∫(1/x)dx?",
-            opts: ["ln|x| + C", "x² + C", "1/x² + C", "e^x + C"],
-            ans: "A",
-            diff: "Medium",
-          },
-        ],
-        Statistics: [
-          {
-            q: "Mean of 2, 4, 6, 8?",
-            opts: ["5", "4", "6", "20"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Median of 1, 3, 5, 7, 9?",
-            opts: ["5", "3", "7", "25"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Mode of 2, 3, 3, 4, 5?",
-            opts: ["3", "2", "4", "No mode"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Range of 10, 20, 30, 40?",
-            opts: ["30", "100", "25", "40"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Probability of coin landing heads?",
-            opts: ["1/2", "1", "0", "1/4"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Standard deviation measures?",
-            opts: ["Spread of data", "Average", "Middle value", "Most common"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Sample space of rolling a die?",
-            opts: [
-              "{1,2,3,4,5,6}",
-              "{1,2,3,4,5}",
-              "{0,1,2,3,4,5,6}",
-              "{2,4,6}",
-            ],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "If P(A) = 0.3, what is P(not A)?",
-            opts: ["0.7", "0.3", "1", "0"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Mean of 5, 5, 5, 5, 5?",
-            opts: ["5", "25", "0", "1"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Quartile divides data into?",
-            opts: ["4 parts", "2 parts", "10 parts", "100 parts"],
-            ans: "A",
-            diff: "Medium",
-          },
-        ],
-        Trigonometry: [
-          {
-            q: "sin²θ + cos²θ = ?",
-            opts: ["1", "0", "2", "θ"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "tan(θ) = ?",
-            opts: [
-              "sin(θ)/cos(θ)",
-              "cos(θ)/sin(θ)",
-              "sin(θ)·cos(θ)",
-              "1/sin(θ)",
-            ],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "sin(90°) = ?",
-            opts: ["1", "0", "√2/2", "∞"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "cos(0°) = ?",
-            opts: ["1", "0", "-1", "√3/2"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "What is sin(30°)?",
-            opts: ["1/2", "√3/2", "1", "0"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "cos(60°) = ?",
-            opts: ["1/2", "√3/2", "1", "0"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Period of sin(x)?",
-            opts: ["2π", "π", "π/2", "4π"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "tan(45°) = ?",
-            opts: ["1", "0", "√3", "∞"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "sin(-x) = ?",
-            opts: ["-sin(x)", "sin(x)", "cos(x)", "-cos(x)"],
-            ans: "A",
-            diff: "Hard",
-          },
-          {
-            q: "Amplitude of 3sin(x)?",
-            opts: ["3", "1", "π", "6"],
-            ans: "A",
-            diff: "Medium",
-          },
-        ],
-      },
-      Science: {
-        Chemistry: [
-          {
-            q: "What is H2O?",
-            opts: ["Water", "Hydrogen", "Oxygen", "Acid"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Atomic number of Carbon?",
-            opts: ["6", "12", "14", "8"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Chemical symbol for Sodium?",
-            opts: ["Na", "So", "S", "N"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "pH of neutral solution?",
-            opts: ["7", "0", "14", "1"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Formula for salt (table)?",
-            opts: ["NaCl", "NaOH", "HCl", "H2SO4"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Number of protons in Oxygen?",
-            opts: ["8", "6", "16", "12"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Chemical symbol for Gold?",
-            opts: ["Au", "Go", "G", "Ag"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Electrons in outer shell of Neon?",
-            opts: ["8", "2", "6", "10"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Acid + Base produces?",
-            opts: ["Salt + Water", "Oxygen", "Hydrogen", "Carbon dioxide"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Most abundant gas in air?",
-            opts: ["Nitrogen", "Oxygen", "Carbon dioxide", "Hydrogen"],
-            ans: "A",
-            diff: "Easy",
-          },
-        ],
-        Physics: [
-          {
-            q: "Speed of light (m/s)?",
-            opts: ["3×10⁸", "3×10⁶", "3×10⁴", "3×10¹⁰"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Unit of force?",
-            opts: ["Newton", "Joule", "Watt", "Pascal"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Formula for force?",
-            opts: ["F = ma", "F = mv", "F = m/a", "F = a/m"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Unit of energy?",
-            opts: ["Joule", "Newton", "Watt", "Volt"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Acceleration due to gravity?",
-            opts: ["9.8 m/s²", "10 m/s²", "9 m/s²", "8.8 m/s²"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Ohm's Law: V = ?",
-            opts: ["IR", "I/R", "R/I", "I+R"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Unit of power?",
-            opts: ["Watt", "Joule", "Newton", "Ampere"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Kinetic energy formula?",
-            opts: ["½mv²", "mgh", "mv", "m/v"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "1st law of thermodynamics?",
-            opts: [
-              "Energy conservation",
-              "Heat flows hot→cold",
-              "Entropy increases",
-              "Action=Reaction",
-            ],
-            ans: "A",
-            diff: "Hard",
-          },
-          {
-            q: "Frequency unit?",
-            opts: ["Hertz", "Watt", "Joule", "Newton"],
-            ans: "A",
-            diff: "Easy",
-          },
-        ],
-        Biology: [
-          {
-            q: "Powerhouse of the cell?",
-            opts: ["Mitochondria", "Nucleus", "Ribosome", "Cell wall"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Process plants make food?",
-            opts: [
-              "Photosynthesis",
-              "Respiration",
-              "Digestion",
-              "Fermentation",
-            ],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "DNA stands for?",
-            opts: [
-              "Deoxyribonucleic acid",
-              "Dioxy nucleic acid",
-              "Double nuclear acid",
-              "Dynamic nuclear acid",
-            ],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Largest organ in human body?",
-            opts: ["Skin", "Liver", "Brain", "Heart"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Number of chambers in heart?",
-            opts: ["4", "2", "3", "6"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Blood type 'universal donor'?",
-            opts: ["O-", "O+", "AB+", "A+"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Where does digestion begin?",
-            opts: ["Mouth", "Stomach", "Small intestine", "Esophagus"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Function of red blood cells?",
-            opts: [
-              "Carry oxygen",
-              "Fight infection",
-              "Clot blood",
-              "Digest food",
-            ],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Number of chromosomes in humans?",
-            opts: ["46", "23", "44", "48"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Plant cell has but animal doesn't?",
-            opts: ["Cell wall", "Nucleus", "Mitochondria", "Ribosomes"],
-            ans: "A",
-            diff: "Medium",
-          },
-        ],
-      },
-      English: {
-        Grammar: [
-          {
-            q: "What is a noun?",
-            opts: [
-              "Person/place/thing",
-              "Action word",
-              "Describing word",
-              "Connecting word",
-            ],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Past tense of 'go'?",
-            opts: ["went", "gone", "going", "goes"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Which is a pronoun?",
-            opts: ["she", "run", "happy", "quickly"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Plural of 'child'?",
-            opts: ["children", "childs", "childes", "child's"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Adjective describes a?",
-            opts: ["Noun", "Verb", "Adverb", "Pronoun"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Which is a verb?",
-            opts: ["run", "cat", "happy", "very"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Past tense of 'eat'?",
-            opts: ["ate", "eated", "eaten", "eating"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Which is an adverb?",
-            opts: ["quickly", "quick", "quickness", "quicker"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "'The cat sat on the mat' - subject?",
-            opts: ["cat", "sat", "mat", "the"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Comparative form of 'good'?",
-            opts: ["better", "gooder", "more good", "best"],
-            ans: "A",
-            diff: "Medium",
-          },
-        ],
-        Literature: [
-          {
-            q: "Who wrote Romeo & Juliet?",
-            opts: ["Shakespeare", "Dickens", "Austen", "Orwell"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "A short story teaching moral?",
-            opts: ["Fable", "Novel", "Biography", "Essay"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Main character in a story?",
-            opts: ["Protagonist", "Antagonist", "Narrator", "Author"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Author of '1984'?",
-            opts: [
-              "George Orwell",
-              "Aldous Huxley",
-              "Ray Bradbury",
-              "H.G. Wells",
-            ],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Shakespeare's home town?",
-            opts: ["Stratford", "London", "Oxford", "Cambridge"],
-            ans: "A",
-            diff: "Hard",
-          },
-          {
-            q: "Poetry with 14 lines?",
-            opts: ["Sonnet", "Haiku", "Limerick", "Ballad"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Comparison using 'like' or 'as'?",
-            opts: ["Simile", "Metaphor", "Alliteration", "Personification"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Story of person's life by another?",
-            opts: ["Biography", "Autobiography", "Memoir", "Novel"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Harry Potter author?",
-            opts: [
-              "J.K. Rowling",
-              "C.S. Lewis",
-              "J.R.R. Tolkien",
-              "Roald Dahl",
-            ],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Three-line Japanese poem?",
-            opts: ["Haiku", "Sonnet", "Limerick", "Ode"],
-            ans: "A",
-            diff: "Medium",
-          },
-        ],
-        Vocabulary: [
-          {
-            q: "Synonym of 'happy'?",
-            opts: ["joyful", "sad", "angry", "tired"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Antonym of 'hot'?",
-            opts: ["cold", "warm", "cool", "freezing"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "'Benevolent' means?",
-            opts: ["Kind", "Evil", "Angry", "Lazy"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Synonym of 'big'?",
-            opts: ["large", "small", "tiny", "little"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "'Verbose' means?",
-            opts: ["Wordy", "Brief", "Silent", "Clear"],
-            ans: "A",
-            diff: "Hard",
-          },
-          {
-            q: "Antonym of 'difficult'?",
-            opts: ["easy", "hard", "complex", "tough"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "'Courageous' means?",
-            opts: ["Brave", "Scared", "Weak", "Foolish"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Synonym of 'quick'?",
-            opts: ["fast", "slow", "steady", "careful"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "'Enigma' means?",
-            opts: ["Mystery", "Solution", "Answer", "Fact"],
-            ans: "A",
-            diff: "Hard",
-          },
-          {
-            q: "Antonym of 'ancient'?",
-            opts: ["modern", "old", "historic", "antique"],
-            ans: "A",
-            diff: "Medium",
-          },
-        ],
-      },
-      History: {
-        "World History": [
-          {
-            q: "Year World War II ended?",
-            opts: ["1945", "1944", "1946", "1943"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "First president of USA?",
-            opts: [
-              "George Washington",
-              "Abraham Lincoln",
-              "Thomas Jefferson",
-              "John Adams",
-            ],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Berlin Wall fell in?",
-            opts: ["1989", "1990", "1988", "1991"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Ancient Egyptian writing?",
-            opts: ["Hieroglyphics", "Cuneiform", "Sanskrit", "Latin"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Columbus sailed in?",
-            opts: ["1492", "1500", "1480", "1510"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "French Revolution began?",
-            opts: ["1789", "1776", "1800", "1812"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Great Wall is in?",
-            opts: ["China", "Japan", "India", "Mongolia"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "First man on moon?",
-            opts: [
-              "Neil Armstrong",
-              "Buzz Aldrin",
-              "Yuri Gagarin",
-              "John Glenn",
-            ],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Renaissance began in?",
-            opts: ["Italy", "France", "England", "Spain"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Titanic sank in?",
-            opts: ["1912", "1910", "1915", "1920"],
-            ans: "A",
-            diff: "Medium",
-          },
-        ],
-        "South African History": [
-          {
-            q: "Apartheid ended in?",
-            opts: ["1994", "1990", "1996", "1991"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "First democratic president?",
-            opts: [
-              "Nelson Mandela",
-              "F.W. de Klerk",
-              "Thabo Mbeki",
-              "Desmond Tutu",
-            ],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Freedom Charter signed?",
-            opts: ["1955", "1960", "1950", "1965"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Sharpeville massacre year?",
-            opts: ["1960", "1955", "1965", "1976"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Soweto uprising?",
-            opts: ["1976", "1980", "1970", "1985"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "How many official languages?",
-            opts: ["11", "9", "12", "10"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Capital of South Africa?",
-            opts: ["3 capitals", "Pretoria", "Cape Town", "Johannesburg"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Who was Hendrik Verwoerd?",
-            opts: [
-              "Apartheid architect",
-              "Freedom fighter",
-              "ANC leader",
-              "First president",
-            ],
-            ans: "A",
-            diff: "Hard",
-          },
-          {
-            q: "Year of first democratic vote?",
-            opts: ["1994", "1990", "1996", "1992"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Steve Biko died in?",
-            opts: ["1977", "1976", "1980", "1975"],
-            ans: "A",
-            diff: "Hard",
-          },
-        ],
-      },
-      Geography: {
-        "World Geography": [
-          {
-            q: "Largest continent?",
-            opts: ["Asia", "Africa", "Europe", "Americas"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Longest river?",
-            opts: ["Nile", "Amazon", "Yangtze", "Mississippi"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Tallest mountain?",
-            opts: ["Mount Everest", "K2", "Kilimanjaro", "Mont Blanc"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Largest ocean?",
-            opts: ["Pacific", "Atlantic", "Indian", "Arctic"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Capital of France?",
-            opts: ["Paris", "Lyon", "Marseille", "Nice"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Sahara Desert is in?",
-            opts: ["Africa", "Asia", "Australia", "Americas"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "How many continents?",
-            opts: ["7", "6", "5", "8"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Great Barrier Reef location?",
-            opts: ["Australia", "Brazil", "Philippines", "Indonesia"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Capital of Japan?",
-            opts: ["Tokyo", "Osaka", "Kyoto", "Hiroshima"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Driest desert?",
-            opts: ["Atacama", "Sahara", "Gobi", "Kalahari"],
-            ans: "A",
-            diff: "Hard",
-          },
-        ],
-        "South African Geography": [
-          {
-            q: "Largest city in SA?",
-            opts: ["Johannesburg", "Cape Town", "Durban", "Pretoria"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Table Mountain is in?",
-            opts: ["Cape Town", "Durban", "Port Elizabeth", "Johannesburg"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Kruger National Park province?",
-            opts: ["Mpumalanga", "Limpopo", "KZN", "Gauteng"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Number of provinces?",
-            opts: ["9", "8", "10", "11"],
-            ans: "A",
-            diff: "Easy",
-          },
-          {
-            q: "Longest river in SA?",
-            opts: ["Orange River", "Limpopo", "Vaal", "Tugela"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Drakensberg is in?",
-            opts: [
-              "KwaZulu-Natal",
-              "Eastern Cape",
-              "Free State",
-              "Western Cape",
-            ],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Garden Route is in?",
-            opts: [
-              "Western/Eastern Cape",
-              "KZN",
-              "Mpumalanga",
-              "Northern Cape",
-            ],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Highest peak in SA?",
-            opts: [
-              "Mafadi",
-              "Injasuti",
-              "Thabana Ntlenyana",
-              "Champagne Castle",
-            ],
-            ans: "A",
-            diff: "Hard",
-          },
-          {
-            q: "Border countries of SA?",
-            opts: ["6 countries", "5 countries", "4 countries", "7 countries"],
-            ans: "A",
-            diff: "Medium",
-          },
-          {
-            q: "Robben Island is near?",
-            opts: ["Cape Town", "Durban", "Port Elizabeth", "East London"],
-            ans: "A",
-            diff: "Easy",
-          },
-        ],
-      },
-    };
-
-    const templates = questionTemplates[subjectName]?.[topicName] || [
+    // Mathematics Questions
+    const mathQuestions = [
       {
-        q: `${topicName} question about ${subjectName}`,
-        opts: ["Option A", "Option B", "Option C", "Option D"],
-        ans: "A",
-        diff: "Medium",
+        id: "1",
+        question: "Solve for x: 2x + 5 = 15",
+        options: ["x = 5", "x = 10", "x = 7.5", "x = 20"],
+        correctAnswer: 0,
+        topic: "Algebra",
+        difficulty: "easy",
+        explanation:
+          "Subtract 5 from both sides: 2x = 10, then divide by 2: x = 5",
+      },
+      {
+        id: "2",
+        question: "What is the value of x² when x = 4?",
+        options: ["8", "16", "12", "20"],
+        correctAnswer: 1,
+        topic: "Algebra",
+        difficulty: "easy",
+        explanation: "x² = 4² = 4 × 4 = 16",
+      },
+      {
+        id: "3",
+        question: "Simplify: 3x + 2x - x",
+        options: ["4x", "5x", "6x", "2x"],
+        correctAnswer: 0,
+        topic: "Algebra",
+        difficulty: "medium",
+        explanation: "Combine like terms: 3x + 2x - x = (3 + 2 - 1)x = 4x",
+      },
+      {
+        id: "4",
+        question:
+          "What is the area of a triangle with base 10cm and height 6cm?",
+        options: ["30cm²", "60cm²", "16cm²", "40cm²"],
+        correctAnswer: 0,
+        topic: "Geometry",
+        difficulty: "easy",
+        explanation: "Area = ½ × base × height = ½ × 10 × 6 = 30cm²",
+      },
+      {
+        id: "5",
+        question:
+          "Find the circumference of a circle with radius 7cm (π = 22/7)",
+        options: ["44cm", "22cm", "154cm", "49cm"],
+        correctAnswer: 0,
+        topic: "Geometry",
+        difficulty: "medium",
+        explanation: "Circumference = 2πr = 2 × (22/7) × 7 = 44cm",
+      },
+      {
+        id: "6",
+        question: "What is 15% of 200?",
+        options: ["30", "25", "35", "20"],
+        correctAnswer: 0,
+        topic: "Percentages",
+        difficulty: "easy",
+        explanation: "15% of 200 = (15/100) × 200 = 30",
+      },
+      {
+        id: "7",
+        question: "Solve: 3(x - 2) = 12",
+        options: ["x = 6", "x = 5", "x = 4", "x = 8"],
+        correctAnswer: 0,
+        topic: "Algebra",
+        difficulty: "medium",
+        explanation: "Expand: 3x - 6 = 12, then 3x = 18, so x = 6",
+      },
+      {
+        id: "8",
+        question: "What is the value of π (pi) approximately?",
+        options: ["3.14", "2.71", "1.41", "4.20"],
+        correctAnswer: 0,
+        topic: "Constants",
+        difficulty: "easy",
+        explanation: "π (pi) is approximately 3.14159...",
+      },
+      {
+        id: "9",
+        question: "Find the perimeter of a square with side 8cm",
+        options: ["32cm", "64cm", "16cm", "24cm"],
+        correctAnswer: 0,
+        topic: "Geometry",
+        difficulty: "easy",
+        explanation: "Perimeter = 4 × side = 4 × 8 = 32cm",
+      },
+      {
+        id: "10",
+        question: "What is the square root of 144?",
+        options: ["12", "14", "10", "16"],
+        correctAnswer: 0,
+        topic: "Roots",
+        difficulty: "easy",
+        explanation: "√144 = 12 because 12 × 12 = 144",
       },
     ];
 
-    for (let i = 1; i <= count; i++) {
-      const template = templates[(i - 1) % templates.length];
-      mockQuestions.push({
-        _id: `mock_${subjectName}_${topicName}_${i}`,
-        question: `${template.q}`,
-        options: template.opts,
-        correctAnswer: template.ans,
-        difficulty:
-          template.diff ||
-          (i % 3 === 0 ? "Hard" : i % 2 === 0 ? "Medium" : "Easy"),
-        subject: subjectName,
-        topic: topicName,
+    // English Questions
+    const englishQuestions = [
+      {
+        id: "1",
+        question: "What is a noun?",
+        options: [
+          "A word that describes an action",
+          "A word that names a person, place, or thing",
+          "A word that describes a noun",
+          "A connecting word",
+        ],
+        correctAnswer: 1,
+        topic: "Grammar",
+        difficulty: "easy",
+        explanation:
+          "A noun is a word that names a person, place, thing, or idea.",
+      },
+      {
+        id: "2",
+        question: "Identify the verb in: 'The cat sleeps on the mat.'",
+        options: ["cat", "sleeps", "mat", "the"],
+        correctAnswer: 1,
+        topic: "Grammar",
+        difficulty: "easy",
+        explanation:
+          "'Sleeps' is the verb as it shows the action being performed.",
+      },
+      {
+        id: "3",
+        question: "What is an adjective?",
+        options: [
+          "A word that describes a noun",
+          "A word that shows action",
+          "A connecting word",
+          "A word that replaces a noun",
+        ],
+        correctAnswer: 0,
+        topic: "Grammar",
+        difficulty: "easy",
+        explanation: "An adjective describes or modifies a noun.",
+      },
+      {
+        id: "4",
+        question: "Choose the correct sentence:",
+        options: [
+          "She don't like apples",
+          "She doesn't like apples",
+          "She doesn't likes apples",
+          "She don't likes apples",
+        ],
+        correctAnswer: 1,
+        topic: "Grammar",
+        difficulty: "medium",
+        explanation: "Use 'doesn't' (does not) with third person singular.",
+      },
+      {
+        id: "5",
+        question: "What is the plural of 'child'?",
+        options: ["childs", "childrens", "children", "childes"],
+        correctAnswer: 2,
+        topic: "Grammar",
+        difficulty: "easy",
+        explanation: "'Children' is the irregular plural form of 'child'.",
+      },
+      {
+        id: "6",
+        question: "What is a synonym?",
+        options: [
+          "A word with opposite meaning",
+          "A word with similar meaning",
+          "A made-up word",
+          "A proper noun",
+        ],
+        correctAnswer: 1,
+        topic: "Vocabulary",
+        difficulty: "easy",
+        explanation:
+          "A synonym is a word that means the same or nearly the same as another word.",
+      },
+      {
+        id: "7",
+        question: "Identify the adverb: 'She ran quickly.'",
+        options: ["She", "ran", "quickly", "none"],
+        correctAnswer: 2,
+        topic: "Grammar",
+        difficulty: "medium",
+        explanation: "'Quickly' is an adverb describing how she ran.",
+      },
+      {
+        id: "8",
+        question: "What is a pronoun?",
+        options: [
+          "A word that names something",
+          "A word that replaces a noun",
+          "A describing word",
+          "An action word",
+        ],
+        correctAnswer: 1,
+        topic: "Grammar",
+        difficulty: "easy",
+        explanation: "A pronoun replaces a noun (e.g., he, she, it, they).",
+      },
+      {
+        id: "9",
+        question: "Which is a proper noun?",
+        options: ["city", "John", "book", "happy"],
+        correctAnswer: 1,
+        topic: "Grammar",
+        difficulty: "easy",
+        explanation:
+          "John is a proper noun (specific name) and requires capitalization.",
+      },
+      {
+        id: "10",
+        question: "What is alliteration?",
+        options: [
+          "Repetition of vowel sounds",
+          "Repetition of consonant sounds at the beginning of words",
+          "A type of rhyme",
+          "A metaphor",
+        ],
+        correctAnswer: 1,
+        topic: "Literary Devices",
+        difficulty: "medium",
+        explanation:
+          "Alliteration repeats consonant sounds (e.g., 'Peter Piper picked').",
+      },
+    ];
+
+    // Physical Science Questions
+    const physicalScienceQuestions = [
+      {
+        id: "1",
+        question: "What is the chemical symbol for water?",
+        options: ["H2O", "O2", "CO2", "H2O2"],
+        correctAnswer: 0,
+        topic: "Chemistry",
+        difficulty: "easy",
+        explanation:
+          "Water is composed of 2 hydrogen atoms and 1 oxygen atom: H2O",
+      },
+      {
+        id: "2",
+        question: "What is the speed of light in a vacuum?",
+        options: [
+          "300,000 km/s",
+          "150,000 km/s",
+          "500,000 km/s",
+          "100,000 km/s",
+        ],
+        correctAnswer: 0,
+        topic: "Physics",
+        difficulty: "medium",
+        explanation:
+          "Light travels at approximately 300,000 kilometers per second.",
+      },
+      {
+        id: "3",
+        question: "What is Newton's First Law of Motion?",
+        options: [
+          "Force equals mass times acceleration",
+          "An object at rest stays at rest unless acted upon by a force",
+          "For every action there is an equal and opposite reaction",
+          "Energy cannot be created or destroyed",
+        ],
+        correctAnswer: 1,
+        topic: "Physics",
+        difficulty: "medium",
+        explanation:
+          "Newton's First Law states that objects resist changes in motion.",
+      },
+      {
+        id: "4",
+        question: "How many electrons does a carbon atom have?",
+        options: ["4", "6", "8", "12"],
+        correctAnswer: 1,
+        topic: "Chemistry",
+        difficulty: "easy",
+        explanation: "Carbon has atomic number 6, meaning 6 electrons.",
+      },
+      {
+        id: "5",
+        question: "What is the atomic number of Oxygen?",
+        options: ["6", "7", "8", "9"],
+        correctAnswer: 2,
+        topic: "Chemistry",
+        difficulty: "easy",
+        explanation: "Oxygen has atomic number 8 (8 protons).",
+      },
+      {
+        id: "6",
+        question: "What state of matter is water at 25°C?",
+        options: ["Solid", "Liquid", "Gas", "Plasma"],
+        correctAnswer: 1,
+        topic: "Matter",
+        difficulty: "easy",
+        explanation: "At 25°C (room temperature), water is in liquid state.",
+      },
+      {
+        id: "7",
+        question: "What is the formula for calculating force?",
+        options: ["F = m × a", "F = m ÷ a", "F = m + a", "F = m - a"],
+        correctAnswer: 0,
+        topic: "Physics",
+        difficulty: "medium",
+        explanation: "Force = mass × acceleration (F = ma)",
+      },
+      {
+        id: "8",
+        question: "What is the pH of a neutral solution?",
+        options: ["0", "7", "14", "10"],
+        correctAnswer: 1,
+        topic: "Chemistry",
+        difficulty: "easy",
+        explanation: "A neutral solution has pH 7 (neither acidic nor basic).",
+      },
+      {
+        id: "9",
+        question: "What is electricity?",
+        options: [
+          "Flow of water",
+          "Flow of electrons",
+          "Flow of protons",
+          "Flow of neutrons",
+        ],
+        correctAnswer: 1,
+        topic: "Physics",
+        difficulty: "easy",
+        explanation:
+          "Electricity is the flow of electrons through a conductor.",
+      },
+      {
+        id: "10",
+        question: "What is the unit of electrical resistance?",
+        options: ["Volt", "Ampere", "Ohm", "Watt"],
+        correctAnswer: 2,
+        topic: "Physics",
+        difficulty: "medium",
+        explanation: "Electrical resistance is measured in Ohms (Ω).",
+      },
+    ];
+
+    // Add more subjects with similar structure...
+    const lifeSciencesQuestions = [...physicalScienceQuestions].map((q, i) => ({
+      ...q,
+      id: `${i + 1}`,
+      topic: "Biology",
+    }));
+
+    const historyQuestions = [...englishQuestions].map((q, i) => ({
+      ...q,
+      id: `${i + 1}`,
+      topic: "History",
+    }));
+
+    const geographyQuestions = [...englishQuestions].map((q, i) => ({
+      ...q,
+      id: `${i + 1}`,
+      topic: "Geography",
+    }));
+
+    const accountingQuestions = [...mathQuestions].map((q, i) => ({
+      ...q,
+      id: `${i + 1}`,
+      topic: "Accounting",
+    }));
+
+    // Select questions based on subject
+    let selectedQuestions = mathQuestions;
+
+    if (subjectName.includes("math")) {
+      selectedQuestions = mathQuestions;
+    } else if (subjectName.includes("english")) {
+      selectedQuestions = englishQuestions;
+    } else if (subjectName.includes("physical")) {
+      selectedQuestions = physicalScienceQuestions;
+    } else if (subjectName.includes("life")) {
+      selectedQuestions = lifeSciencesQuestions;
+    } else if (subjectName.includes("history")) {
+      selectedQuestions = historyQuestions;
+    } else if (subjectName.includes("geography")) {
+      selectedQuestions = geographyQuestions;
+    } else if (subjectName.includes("accounting")) {
+      selectedQuestions = accountingQuestions;
+    }
+
+    // Expand to 100 questions
+    const expandedQuestions = [];
+    for (let i = 0; i < 100; i++) {
+      const baseQuestion = selectedQuestions[i % selectedQuestions.length];
+      expandedQuestions.push({
+        ...baseQuestion,
+        id: `${i + 1}`,
+        question: baseQuestion.question, // Remove "Q1:" prefix
       });
     }
 
-    return mockQuestions;
+    return expandedQuestions;
   };
 
-  const fetchQuestions = async () => {
-    setLoading(true);
-    try {
-      // Try to fetch from API
-      try {
-        const response = await fetch(
-          `https://opentdb.com/api.php?amount=10&category=${getCategoryId(
-            subject.name
-          )}&difficulty=${getDifficulty(grade)}&type=multiple`
-        );
+  const currentQuestion = questions[currentQuestionIndex];
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch questions");
-        }
+  const handleAnswerSelect = (answerIndex) => {
+    setSelectedAnswer(answerIndex);
+  };
 
-        const data = await response.json();
-
-        if (data.response_code !== 0) {
-          throw new Error("No questions available");
-        }
-
-        const formattedQuestions = data.results.map((q, index) => ({
-          id: index + 1,
-          question: decodeHTML(q.question),
-          options: shuffleArray([
-            ...q.incorrect_answers.map(decodeHTML),
-            decodeHTML(q.correct_answer),
-          ]),
-          correctAnswer: decodeHTML(q.correct_answer),
-          difficulty: q.difficulty,
-          category: q.category,
-        }));
-
-        setQuestions(formattedQuestions);
-      } catch (apiError) {
-        // Silently use mock data if API fails
-        const mockData = generateMockQuestions(
-          subject?.name || "Mathematics",
-          topic?.name || "Algebra",
-          100
-        );
-        setQuestions(mockData);
-        console.log("✅ Using mock data (API unavailable)");
-      }
-    } catch (error) {
-      // Final fallback - shouldn't reach here
-      console.error("Error loading questions:", error);
-      const mockData = generateMockQuestions(
-        subject?.name || "Mathematics",
-        topic?.name || "Algebra",
-        100
-      );
-      setQuestions(mockData);
+  const handleNext = () => {
+    if (selectedAnswer === null) {
       Alert.alert(
-        "Offline Mode",
-        "Using practice questions. Connect to internet for full question bank."
+        "Please select an answer",
+        "You must select an answer before proceeding."
       );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const startQuiz = () => {
-    if (questions.length === 0) {
-      Alert.alert("No Questions", "No questions available for this topic");
       return;
     }
 
-    navigation.navigate("Quiz", {
-      subject,
-      topic,
-      questions,
-    });
+    if (!currentQuestion) {
+      Alert.alert("Error", "Question not found");
+      return;
+    }
+
+    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
+
+    setAnsweredQuestions([
+      ...answeredQuestions,
+      {
+        question: currentQuestion.question,
+        userAnswer: selectedAnswer,
+        correctAnswer: currentQuestion.correctAnswer,
+        isCorrect,
+        explanation: currentQuestion.explanation,
+      },
+    ]);
+
+    if (isCorrect) {
+      setScore(score + 1);
+    }
+
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setSelectedAnswer(null);
+    } else {
+      setTestComplete(true);
+    }
   };
 
-  // Pagination
-  const totalPages = Math.ceil(questions.length / questionsPerPage);
-  const startIndex = (currentPage - 1) * questionsPerPage;
-  const endIndex = startIndex + questionsPerPage;
-  const currentQuestions = questions.slice(startIndex, endIndex);
+  const handleRetry = () => {
+    setCurrentQuestionIndex(0);
+    setSelectedAnswer(null);
+    setScore(0);
+    setAnsweredQuestions([]);
+    setTestComplete(false);
+    loadQuestionsFromAPI();
+  };
 
   if (loading) {
     return (
@@ -1172,9 +492,180 @@ export default function TopicQuestionsScreen({ navigation, route }) {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.primary} />
           <Text style={[styles.loadingText, { color: theme.text }]}>
-            Loading questions...
+            Loading questions from server...
           </Text>
         </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!questions || questions.length === 0) {
+    return (
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: theme.background }]}
+      >
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorIcon}>📚</Text>
+          <Text style={[styles.errorText, { color: theme.text }]}>
+            No questions available for this topic yet.
+          </Text>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: theme.primary }]}
+            onPress={loadQuestionsFromAPI}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={[styles.backButtonText, { color: theme.primary }]}>
+              Go Back
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!currentQuestion) {
+    return (
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: theme.background }]}
+      >
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={[styles.errorText, { color: theme.text }]}>
+            Question not found. Please try again.
+          </Text>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: theme.primary }]}
+            onPress={handleRetry}
+          >
+            <Text style={styles.retryButtonText}>Restart Test</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={[styles.backButtonText, { color: theme.primary }]}>
+              Go Back
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (testComplete) {
+    const percentage = Math.round((score / questions.length) * 100);
+
+    return (
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: theme.background }]}
+      >
+        <ScrollView style={styles.scrollView}>
+          <View style={styles.resultsContainer}>
+            <Text style={[styles.resultsTitle, { color: theme.text }]}>
+              {topic.name} Test Complete! 🎉
+            </Text>
+            <View
+              style={[styles.scoreCard, { backgroundColor: theme.surface }]}
+            >
+              <Text style={[styles.scoreText, { color: theme.text }]}>
+                Your Score
+              </Text>
+              <Text style={[styles.scoreNumber, { color: theme.primary }]}>
+                {score} / {questions.length}
+              </Text>
+              <Text style={[styles.percentageText, { color: theme.text }]}>
+                {percentage}%
+              </Text>
+              <Text
+                style={[styles.feedbackText, { color: theme.textSecondary }]}
+              >
+                {percentage >= 80
+                  ? "Excellent work! 🌟"
+                  : percentage >= 60
+                  ? "Good job! Keep practicing! 👍"
+                  : "Keep studying! You'll improve! 💪"}
+              </Text>
+            </View>
+
+            {/* Review Section */}
+            <View style={styles.reviewSection}>
+              <Text style={[styles.reviewTitle, { color: theme.text }]}>
+                Review Your Answers
+              </Text>
+              {answeredQuestions.map((item, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.reviewCard,
+                    {
+                      backgroundColor: theme.surface,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                >
+                  <View style={styles.reviewHeader}>
+                    <Text
+                      style={[
+                        styles.reviewQuestionNumber,
+                        { color: theme.text },
+                      ]}
+                    >
+                      Question {index + 1}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.reviewStatus,
+                        { color: item.isCorrect ? "#4CAF50" : "#F44336" },
+                      ]}
+                    >
+                      {item.isCorrect ? "✓ Correct" : "✗ Wrong"}
+                    </Text>
+                  </View>
+                  <Text style={[styles.reviewQuestion, { color: theme.text }]}>
+                    {item.question}
+                  </Text>
+                  {item.explanation && (
+                    <Text
+                      style={[
+                        styles.reviewExplanation,
+                        { color: theme.textSecondary },
+                      ]}
+                    >
+                      💡 {item.explanation}
+                    </Text>
+                  )}
+                </View>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: theme.primary }]}
+              onPress={handleRetry}
+            >
+              <Text style={styles.buttonText}>Try Again</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.button,
+                styles.secondaryButton,
+                { borderColor: theme.primary },
+              ]}
+              onPress={() => navigation.goBack()}
+            >
+              <Text
+                style={[styles.secondaryButtonText, { color: theme.primary }]}
+              >
+                Back to Topics
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -1183,168 +674,125 @@ export default function TopicQuestionsScreen({ navigation, route }) {
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.background }]}
     >
-      {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.surface }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={[styles.backButtonText, { color: theme.primary }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={[styles.backButtonHeader, { color: theme.primary }]}>
             ← Back
           </Text>
         </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>
-            {topic?.name || "Topic"}
-          </Text>
-          <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
-            {subject?.name || "Subject"} • {questions.length} Questions
-          </Text>
-        </View>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>
+          {subject.name} - {topic.name}
+        </Text>
+        <Text style={[styles.progress, { color: theme.textSecondary }]}>
+          Question {currentQuestionIndex + 1} of {questions.length}
+        </Text>
       </View>
 
-      <ScrollView style={styles.scrollView}>
-        {/* Questions List */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              All Questions
-            </Text>
-            <Text
-              style={[styles.questionCount, { color: theme.textSecondary }]}
-            >
-              Showing {startIndex + 1}-{Math.min(endIndex, questions.length)} of{" "}
-              {questions.length}
-            </Text>
-          </View>
-
-          {currentQuestions.length > 0 ? (
-            currentQuestions.map((question, index) => (
-              <View
-                key={question._id || index}
-                style={[
-                  styles.questionCard,
-                  { backgroundColor: theme.surface, borderColor: theme.border },
-                ]}
-              >
-                <View style={styles.questionHeader}>
-                  <Text
-                    style={[styles.questionNumber, { color: theme.primary }]}
-                  >
-                    Q{startIndex + index + 1}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.difficultyBadge,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    {question.difficulty || "Medium"}
-                  </Text>
-                </View>
-                <Text style={[styles.questionText, { color: theme.text }]}>
-                  {question.question}
-                </Text>
-
-                {/* Options */}
-                <View style={styles.optionsContainer}>
-                  {question.options?.map((option, optIndex) => (
-                    <View
-                      key={optIndex}
-                      style={[
-                        styles.optionItem,
-                        { backgroundColor: theme.background },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.optionLabel,
-                          { color: theme.textSecondary },
-                        ]}
-                      >
-                        {String.fromCharCode(65 + optIndex)}.
-                      </Text>
-                      <Text style={[styles.optionText, { color: theme.text }]}>
-                        {option}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-
-                {/* Show correct answer */}
-                <View style={styles.answerContainer}>
-                  <Text
-                    style={[styles.correctAnswer, { color: theme.success }]}
-                  >
-                    ✓ Correct Answer: {question.correctAnswer}
-                  </Text>
-                </View>
-              </View>
-            ))
-          ) : (
-            <View style={styles.noQuestionsContainer}>
-              <Text style={[styles.noQuestionsText, { color: theme.text }]}>
-                No questions available
-              </Text>
-            </View>
-          )}
+      <ScrollView style={styles.content}>
+        <View
+          style={[styles.topicBadge, { backgroundColor: subject.color + "20" }]}
+        >
+          <Text style={[styles.topicBadgeText, { color: subject.color }]}>
+            {subject.icon} {currentQuestion.topic || topic.name}
+          </Text>
         </View>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <View style={styles.pagination}>
-            <TouchableOpacity
+        {currentQuestion.difficulty && (
+          <View style={styles.difficultyBadge}>
+            <Text
               style={[
-                styles.paginationButton,
+                styles.difficultyText,
                 {
-                  backgroundColor: theme.surface,
-                  opacity: currentPage === 1 ? 0.5 : 1,
+                  color:
+                    currentQuestion.difficulty === "easy"
+                      ? "#4CAF50"
+                      : currentQuestion.difficulty === "medium"
+                      ? "#FF9800"
+                      : "#F44336",
                 },
               ]}
-              onPress={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
             >
-              <Text style={[styles.paginationText, { color: theme.text }]}>
-                Previous
-              </Text>
-            </TouchableOpacity>
-
-            <Text style={[styles.pageInfo, { color: theme.text }]}>
-              Page {currentPage} of {totalPages}
+              {currentQuestion.difficulty.toUpperCase()}
             </Text>
-
-            <TouchableOpacity
-              style={[
-                styles.paginationButton,
-                {
-                  backgroundColor: theme.surface,
-                  opacity: currentPage === totalPages ? 0.5 : 1,
-                },
-              ]}
-              onPress={() =>
-                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-              }
-              disabled={currentPage === totalPages}
-            >
-              <Text style={[styles.paginationText, { color: theme.text }]}>
-                Next
-              </Text>
-            </TouchableOpacity>
           </View>
         )}
-      </ScrollView>
 
-      {/* Start Quiz Button */}
-      <View style={[styles.footer, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.question, { color: theme.text }]}>
+          {currentQuestion.question}
+        </Text>
+
+        <View style={styles.optionsContainer}>
+          {currentQuestion.options &&
+            currentQuestion.options.map((option, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.option,
+                  {
+                    backgroundColor: theme.surface,
+                    borderColor:
+                      selectedAnswer === index ? theme.primary : theme.border,
+                    borderWidth: selectedAnswer === index ? 2 : 1,
+                  },
+                ]}
+                onPress={() => handleAnswerSelect(index)}
+              >
+                <View
+                  style={[
+                    styles.optionCircle,
+                    {
+                      borderColor:
+                        selectedAnswer === index ? theme.primary : theme.border,
+                      backgroundColor:
+                        selectedAnswer === index
+                          ? theme.primary
+                          : "transparent",
+                    },
+                  ]}
+                >
+                  {selectedAnswer === index && (
+                    <Text style={styles.optionCheckmark}>✓</Text>
+                  )}
+                </View>
+                <Text style={[styles.optionText, { color: theme.text }]}>
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+        </View>
+
         <TouchableOpacity
-          style={[styles.startQuizButton, { backgroundColor: theme.primary }]}
-          onPress={startQuiz}
+          style={[
+            styles.nextButton,
+            {
+              backgroundColor:
+                selectedAnswer !== null ? theme.primary : theme.border,
+            },
+          ]}
+          onPress={handleNext}
+          disabled={selectedAnswer === null}
         >
-          <Text style={styles.startQuizButtonText}>
-            Start Quiz ({questions.length} Questions)
+          <Text style={styles.nextButtonText}>
+            {currentQuestionIndex < questions.length - 1
+              ? "Next Question"
+              : "Finish Test"}
           </Text>
         </TouchableOpacity>
-      </View>
+
+        <View style={styles.progressBar}>
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: `${
+                  ((currentQuestionIndex + 1) / questions.length) * 100
+                }%`,
+                backgroundColor: theme.primary,
+              },
+            ]}
+          />
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -1357,169 +805,239 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    padding: 20,
   },
   loadingText: {
-    marginTop: 10,
     fontSize: 16,
+    marginTop: 20,
   },
-  header: {
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
-    paddingBottom: 15,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+  },
+  errorIcon: {
+    fontSize: 60,
+    marginBottom: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 30,
+  },
+  retryButton: {
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 12,
+    marginBottom: 15,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   backButton: {
-    marginBottom: 10,
+    padding: 10,
   },
   backButtonText: {
     fontSize: 16,
     fontWeight: "600",
   },
-  headerContent: {
-    alignItems: "center",
+  header: {
+    padding: 20,
+    elevation: 4,
+  },
+  backButtonHeader: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 10,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
     marginBottom: 5,
   },
-  headerSubtitle: {
+  progress: {
     fontSize: 14,
   },
-  scrollView: {
+  content: {
     flex: 1,
-  },
-  section: {
     padding: 20,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 15,
+  topicBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+    marginBottom: 10,
   },
-  sectionTitle: {
-    fontSize: 20,
+  topicBadgeText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  difficultyBadge: {
+    alignSelf: "flex-start",
+    marginBottom: 20,
+  },
+  difficultyText: {
+    fontSize: 12,
     fontWeight: "bold",
   },
-  questionCount: {
-    fontSize: 14,
+  question: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 30,
+    lineHeight: 26,
   },
-  questionCard: {
+  optionsContainer: {
+    marginBottom: 30,
+  },
+  option: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 12,
+    elevation: 1,
+  },
+  optionCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    marginRight: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  optionCheckmark: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  optionText: {
+    flex: 1,
+    fontSize: 16,
+  },
+  nextButton: {
     padding: 16,
     borderRadius: 12,
-    marginBottom: 15,
-    borderWidth: 1,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    alignItems: "center",
+    elevation: 3,
+    marginBottom: 20,
   },
-  questionHeader: {
+  nextButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  progressBar: {
+    height: 4,
+    backgroundColor: "#E0E0E0",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 2,
+  },
+  resultsContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
+  resultsTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    marginBottom: 30,
+    textAlign: "center",
+  },
+  scoreCard: {
+    width: "100%",
+    padding: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    marginBottom: 30,
+    elevation: 4,
+  },
+  scoreText: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  scoreNumber: {
+    fontSize: 48,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  percentageText: {
+    fontSize: 24,
+    fontWeight: "600",
+    marginBottom: 10,
+  },
+  feedbackText: {
+    fontSize: 16,
+    textAlign: "center",
+    marginTop: 10,
+  },
+  reviewSection: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  reviewTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 15,
+  },
+  reviewCard: {
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  reviewHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 10,
   },
-  questionNumber: {
-    fontSize: 16,
+  reviewQuestionNumber: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  reviewStatus: {
+    fontSize: 14,
     fontWeight: "bold",
   },
-  difficultyBadge: {
-    fontSize: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  questionText: {
+  reviewQuestion: {
     fontSize: 16,
-    lineHeight: 24,
-    marginBottom: 12,
-  },
-  optionsContainer: {
-    marginTop: 8,
-  },
-  optionItem: {
-    flexDirection: "row",
-    padding: 12,
-    borderRadius: 8,
     marginBottom: 8,
   },
-  optionLabel: {
+  reviewExplanation: {
     fontSize: 14,
-    fontWeight: "bold",
-    marginRight: 8,
-    width: 25,
+    fontStyle: "italic",
+    marginTop: 8,
   },
-  optionText: {
-    fontSize: 14,
-    flex: 1,
-  },
-  answerContainer: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
-  },
-  correctAnswer: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  noQuestionsContainer: {
-    padding: 40,
-    alignItems: "center",
-  },
-  noQuestionsText: {
-    fontSize: 16,
-  },
-  pagination: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 20,
-    paddingTop: 0,
-  },
-  paginationButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  paginationText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  pageInfo: {
-    fontSize: 14,
-  },
-  footer: {
-    padding: 20,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  startQuizButton: {
+  button: {
+    width: "100%",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
+    marginBottom: 15,
+    elevation: 3,
   },
-  startQuizButtonText: {
+  buttonText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
   },
+  secondaryButton: {
+    backgroundColor: "transparent",
+    borderWidth: 2,
+  },
+  secondaryButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  scrollView: {
+    flex: 1,
+  },
 });
-
-// Add this helper function to map grade to difficulty
-
-const getDifficulty = (gradeLevel) => {
-  const gradeNum = parseInt(gradeLevel);
-  if (gradeNum <= 8) return "easy";
-  if (gradeNum === 9 || gradeNum === 10) return "medium";
-  return "hard"; // Grade 11 and 12
-};

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -6,21 +6,27 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
+import { AuthContext } from "../context/AuthContext";
 
 export default function AllSubjectsTestScreen({ navigation, route }) {
-  const { grade } = route.params || {};
   const { theme } = useTheme();
-  const [expandedSubject, setExpandedSubject] = useState(null);
+  const { user } = useContext(AuthContext);
+  const { grade: selectedGrade } = route.params || {};
+  const grade = selectedGrade || user?.grade || "12";
+
+  const [loading, setLoading] = useState(false);
+  const [fetchingSubject, setFetchingSubject] = useState(null);
 
   const getQuestionCountByGrade = (baseCount, gradeLevel) => {
     const gradeNum = parseInt(gradeLevel);
-    if (gradeNum <= 8) return Math.floor(baseCount * 0.7); // 70% for Grade 8
-    if (gradeNum === 9) return Math.floor(baseCount * 0.8); // 80% for Grade 9
-    if (gradeNum === 10) return Math.floor(baseCount * 0.9); // 90% for Grade 10
-    return baseCount; // 100% for Grade 11 & 12
+    if (gradeNum <= 8) return Math.floor(baseCount * 0.7);
+    if (gradeNum === 9) return Math.floor(baseCount * 0.8);
+    if (gradeNum === 10) return Math.floor(baseCount * 0.9);
+    return baseCount;
   };
 
   const subjects = [
@@ -30,13 +36,30 @@ export default function AllSubjectsTestScreen({ navigation, route }) {
       icon: "🔢",
       color: "#FF6B6B",
       topics: [
-        { name: "Algebra", questions: getQuestionCountByGrade(100, grade) },
-        { name: "Geometry", questions: getQuestionCountByGrade(100, grade) },
-        { name: "Calculus", questions: getQuestionCountByGrade(100, grade) },
-        { name: "Statistics", questions: getQuestionCountByGrade(100, grade) },
+        {
+          name: "Algebra",
+          category: "19",
+          questions: getQuestionCountByGrade(50, grade),
+        },
+        {
+          name: "Geometry",
+          category: "19",
+          questions: getQuestionCountByGrade(50, grade),
+        },
+        {
+          name: "Calculus",
+          category: "19",
+          questions: getQuestionCountByGrade(50, grade),
+        },
+        {
+          name: "Statistics",
+          category: "19",
+          questions: getQuestionCountByGrade(50, grade),
+        },
         {
           name: "Trigonometry",
-          questions: getQuestionCountByGrade(100, grade),
+          category: "19",
+          questions: getQuestionCountByGrade(50, grade),
         },
       ],
     },
@@ -46,9 +69,21 @@ export default function AllSubjectsTestScreen({ navigation, route }) {
       icon: "🔬",
       color: "#4ECDC4",
       topics: [
-        { name: "Chemistry", questions: getQuestionCountByGrade(100, grade) },
-        { name: "Physics", questions: getQuestionCountByGrade(100, grade) },
-        { name: "Biology", questions: getQuestionCountByGrade(100, grade) },
+        {
+          name: "Chemistry",
+          category: "17",
+          questions: getQuestionCountByGrade(50, grade),
+        },
+        {
+          name: "Physics",
+          category: "17",
+          questions: getQuestionCountByGrade(50, grade),
+        },
+        {
+          name: "Biology",
+          category: "17",
+          questions: getQuestionCountByGrade(50, grade),
+        },
       ],
     },
     {
@@ -57,9 +92,21 @@ export default function AllSubjectsTestScreen({ navigation, route }) {
       icon: "📚",
       color: "#95E1D3",
       topics: [
-        { name: "Grammar", questions: getQuestionCountByGrade(100, grade) },
-        { name: "Literature", questions: getQuestionCountByGrade(100, grade) },
-        { name: "Vocabulary", questions: getQuestionCountByGrade(100, grade) },
+        {
+          name: "Grammar",
+          category: "9",
+          questions: getQuestionCountByGrade(50, grade),
+        },
+        {
+          name: "Literature",
+          category: "10",
+          questions: getQuestionCountByGrade(50, grade),
+        },
+        {
+          name: "Vocabulary",
+          category: "9",
+          questions: getQuestionCountByGrade(50, grade),
+        },
       ],
     },
     {
@@ -70,11 +117,13 @@ export default function AllSubjectsTestScreen({ navigation, route }) {
       topics: [
         {
           name: "World History",
-          questions: getQuestionCountByGrade(100, grade),
+          category: "23",
+          questions: getQuestionCountByGrade(50, grade),
         },
         {
           name: "South African History",
-          questions: getQuestionCountByGrade(100, grade),
+          category: "23",
+          questions: getQuestionCountByGrade(50, grade),
         },
       ],
     },
@@ -86,37 +135,23 @@ export default function AllSubjectsTestScreen({ navigation, route }) {
       topics: [
         {
           name: "World Geography",
-          questions: getQuestionCountByGrade(100, grade),
+          category: "22",
+          questions: getQuestionCountByGrade(50, grade),
         },
         {
           name: "South African Geography",
-          questions: getQuestionCountByGrade(100, grade),
+          category: "22",
+          questions: getQuestionCountByGrade(50, grade),
         },
       ],
     },
   ];
 
-  const handleSubjectPress = (subjectId) => {
-    setExpandedSubject(expandedSubject === subjectId ? null : subjectId);
-  };
-
-  const handleTopicPress = (subject, topic) => {
-    navigation.navigate("TopicQuestions", {
-      subject,
-      topic,
-      grade,
-    });
-  };
-
-  const handleStartAllTopics = (subject) => {
-    // Navigate to first topic of the subject
-    if (subject.topics && subject.topics.length > 0) {
-      navigation.navigate("TopicQuestions", {
-        subject,
-        topic: subject.topics[0],
-        grade,
-      });
-    }
+  const getDifficulty = (gradeLevel) => {
+    const gradeNum = parseInt(gradeLevel);
+    if (gradeNum <= 8) return "easy";
+    if (gradeNum === 9 || gradeNum === 10) return "medium";
+    return "hard";
   };
 
   const getDifficultyLabel = (gradeLevel) => {
@@ -128,9 +163,132 @@ export default function AllSubjectsTestScreen({ navigation, route }) {
 
   const getDifficultyColor = (gradeLevel) => {
     const gradeNum = parseInt(gradeLevel);
-    if (gradeNum <= 8) return "#4CAF50"; // Green
-    if (gradeNum === 9 || gradeNum === 10) return "#FF9800"; // Orange
-    return "#F44336"; // Red
+    if (gradeNum <= 8) return "#4CAF50";
+    if (gradeNum === 9 || gradeNum === 10) return "#FF9800";
+    return "#F44336";
+  };
+
+  const decodeHTML = (html) => {
+    const txt = html
+      .replace(/&quot;/g, '"')
+      .replace(/&#039;/g, "'")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&nbsp;/g, " ");
+    return txt;
+  };
+
+  const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  const fetchAllQuestionsForSubject = async (subject) => {
+    setFetchingSubject(subject.name);
+    setLoading(true);
+
+    try {
+      let allQuestions = [];
+      const difficulty = getDifficulty(grade);
+
+      // Fetch questions from all topics
+      for (const topic of subject.topics) {
+        try {
+          const response = await fetch(
+            `https://opentdb.com/api.php?amount=10&category=${topic.category}&difficulty=${difficulty}&type=multiple`
+          );
+
+          if (!response.ok) {
+            console.warn(`Failed to fetch ${topic.name} questions`);
+            continue;
+          }
+
+          const data = await response.json();
+
+          if (data.response_code === 0 && data.results.length > 0) {
+            const formattedQuestions = data.results.map((q, index) => ({
+              id: `${topic.name}-${index}`,
+              question: decodeHTML(q.question),
+              options: shuffleArray([
+                ...q.incorrect_answers.map(decodeHTML),
+                decodeHTML(q.correct_answer),
+              ]),
+              correctAnswer: decodeHTML(q.correct_answer),
+              difficulty: q.difficulty,
+              category: q.category,
+              topic: topic.name,
+              subject: subject.name,
+            }));
+
+            allQuestions = [...allQuestions, ...formattedQuestions];
+          }
+        } catch (error) {
+          console.error(`Error fetching ${topic.name}:`, error);
+        }
+      }
+
+      if (allQuestions.length === 0) {
+        Alert.alert(
+          "No Questions Available",
+          `Could not load questions for ${subject.name}. Please try again.`
+        );
+        return;
+      }
+
+      // Shuffle all questions together
+      const shuffledQuestions = shuffleArray(allQuestions);
+
+      // Navigate to test with all questions
+      navigation.navigate("TopicQuestions", {
+        subject: {
+          ...subject,
+          name: `${subject.name} - All Topics`,
+        },
+        topic: { name: "All Topics" },
+        questions: shuffledQuestions,
+        totalQuestions: shuffledQuestions.length,
+        grade,
+      });
+    } catch (error) {
+      console.error("Error fetching all questions:", error);
+      Alert.alert(
+        "Error",
+        "Failed to load questions. Please check your internet connection."
+      );
+    } finally {
+      setLoading(false);
+      setFetchingSubject(null);
+    }
+  };
+
+  const handleSubjectPress = (subject) => {
+    Alert.alert(
+      subject.name,
+      `This will load ALL questions from all ${subject.topics.length} topics. Ready to start?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Start Test",
+          onPress: () => fetchAllQuestionsForSubject(subject),
+        },
+      ]
+    );
+  };
+
+  const handleTopicPress = (subject, topic) => {
+    navigation.navigate("TopicQuestions", {
+      subject,
+      topic,
+      grade,
+    });
   };
 
   return (
@@ -148,25 +306,20 @@ export default function AllSubjectsTestScreen({ navigation, route }) {
           </Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.text }]}>
-          Select Subject & Topic
+          All Subjects Test
         </Text>
         <View style={styles.placeholder} />
       </View>
 
       {/* Grade Info */}
       <View style={[styles.gradeInfo, { backgroundColor: theme.surface }]}>
-        <Text style={[styles.gradeText, { color: theme.textSecondary }]}>
-          📚 Grade {grade} • All Subjects
+        <Text style={[styles.gradeLabel, { color: theme.textSecondary }]}>
+          Selected Grade:
+        </Text>
+        <Text style={[styles.gradeValue, { color: theme.primary }]}>
+          Grade {grade}
         </Text>
       </View>
-
-      {/* Change Grade Button */}
-      <TouchableOpacity
-        style={[styles.changeGradeButton, { backgroundColor: theme.primary }]}
-        onPress={() => navigation.navigate("GradeSelection")}
-      >
-        <Text style={styles.changeGradeButtonText}>📚 Change Grade</Text>
-      </TouchableOpacity>
 
       {/* Difficulty Info */}
       <View style={[styles.difficultyCard, { backgroundColor: theme.surface }]}>
@@ -183,104 +336,114 @@ export default function AllSubjectsTestScreen({ navigation, route }) {
         </View>
       </View>
 
-      <ScrollView style={styles.scrollView}>
-        {subjects.map((subject) => {
-          const isExpanded = expandedSubject === subject.id;
-          const totalQuestions = subject.topics.reduce(
-            (sum, topic) => sum + topic.questions,
-            0
-          );
+      {/* Change Grade Button */}
+      <TouchableOpacity
+        style={[styles.changeGradeButton, { backgroundColor: theme.primary }]}
+        onPress={() => navigation.navigate("GradeSelection")}
+      >
+        <Text style={styles.changeGradeButtonText}>📚 Change Grade</Text>
+      </TouchableOpacity>
 
-          return (
-            <View key={subject.id} style={styles.subjectContainer}>
-              {/* Subject Header */}
-              <TouchableOpacity
-                style={[
-                  styles.subjectCard,
-                  {
-                    backgroundColor: theme.surface,
-                    borderColor: subject.color,
-                  },
-                ]}
-                onPress={() => handleSubjectPress(subject.id)}
-              >
-                <View style={styles.subjectHeader}>
-                  <View style={styles.subjectInfo}>
-                    <Text style={styles.subjectIcon}>{subject.icon}</Text>
-                    <View style={styles.subjectDetails}>
-                      <Text style={[styles.subjectName, { color: theme.text }]}>
-                        {subject.name}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.subjectMeta,
-                          { color: theme.textSecondary },
-                        ]}
-                      >
-                        {subject.topics.length} topics • {totalQuestions}{" "}
-                        questions
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.expandIcon, { color: theme.text }]}>
-                    {isExpanded ? "▼" : "▶"}
+      {/* Info Banner */}
+      <View style={[styles.infoBanner, { backgroundColor: "#E3F2FD" }]}>
+        <Text style={styles.infoIcon}>💡</Text>
+        <Text style={styles.infoText}>
+          Tap on a subject to start a test with ALL topics, or tap a specific
+          topic below each subject for focused practice.
+        </Text>
+      </View>
+
+      {/* Loading Overlay */}
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <View
+            style={[styles.loadingCard, { backgroundColor: theme.surface }]}
+          >
+            <ActivityIndicator size="large" color={theme.primary} />
+            <Text style={[styles.loadingText, { color: theme.text }]}>
+              Loading {fetchingSubject} questions...
+            </Text>
+            <Text
+              style={[styles.loadingSubtext, { color: theme.textSecondary }]}
+            >
+              Fetching from all topics
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Subjects List */}
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        {subjects.map((subject) => (
+          <View key={subject.id} style={styles.subjectSection}>
+            <TouchableOpacity
+              style={[
+                styles.subjectCard,
+                {
+                  backgroundColor: theme.surface,
+                  borderLeftColor: subject.color,
+                },
+              ]}
+              onPress={() => handleSubjectPress(subject)}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <View style={styles.subjectHeader}>
+                <Text style={styles.subjectIcon}>{subject.icon}</Text>
+                <View style={styles.subjectInfo}>
+                  <Text style={[styles.subjectName, { color: theme.text }]}>
+                    {subject.name}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.subjectDescription,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    {subject.topics.length} topics • Tap to start full test
                   </Text>
                 </View>
+                <Text style={[styles.arrowIcon, { color: subject.color }]}>
+                  →
+                </Text>
+              </View>
+            </TouchableOpacity>
 
-                {/* Start All Button (when collapsed) */}
-                {!isExpanded && (
-                  <TouchableOpacity
+            {/* Topics Grid */}
+            <View style={styles.topicsGrid}>
+              {subject.topics.map((topic, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.topicChip,
+                    {
+                      backgroundColor: theme.background,
+                      borderColor: subject.color + "40",
+                    },
+                  ]}
+                  onPress={() => handleTopicPress(subject, topic)}
+                  disabled={loading}
+                >
+                  <Text style={[styles.topicName, { color: theme.text }]}>
+                    {topic.name}{" "}
+                    {/* This shows actual topic name like "Algebra", "Chemistry" */}
+                  </Text>
+                  <Text
                     style={[
-                      styles.startAllButton,
-                      { backgroundColor: subject.color },
+                      styles.topicQuestions,
+                      { color: theme.textSecondary },
                     ]}
-                    onPress={() => handleStartAllTopics(subject)}
                   >
-                    <Text style={styles.startAllButtonText}>Start Test →</Text>
-                  </TouchableOpacity>
-                )}
-              </TouchableOpacity>
-
-              {/* Topics List (when expanded) */}
-              {isExpanded && (
-                <View style={styles.topicsContainer}>
-                  {subject.topics.map((topic, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.topicCard,
-                        { backgroundColor: theme.background },
-                      ]}
-                      onPress={() => handleTopicPress(subject, topic)}
-                    >
-                      <View style={styles.topicInfo}>
-                        <Text style={[styles.topicName, { color: theme.text }]}>
-                          {topic.name}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.topicQuestions,
-                            { color: theme.textSecondary },
-                          ]}
-                        >
-                          {topic.questions} questions
-                        </Text>
-                      </View>
-                      <View
-                        style={[
-                          styles.startButton,
-                          { backgroundColor: subject.color },
-                        ]}
-                      >
-                        <Text style={styles.startButtonText}>Start →</Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
+                    {topic.questions} questions
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
-          );
-        })}
+          </View>
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -309,128 +472,33 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
   },
   placeholder: {
-    width: 60,
+    width: 50,
   },
   gradeInfo: {
-    padding: 15,
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-  },
-  gradeText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  changeGradeButton: {
+    padding: 15,
     margin: 20,
-    marginTop: 0,
-    padding: 15,
+    marginBottom: 10,
     borderRadius: 12,
-    alignItems: "center",
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
-  changeGradeButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  scrollView: {
-    flex: 1,
-    padding: 20,
-  },
-  subjectContainer: {
-    marginBottom: 15,
-  },
-  subjectCard: {
-    padding: 20,
-    borderRadius: 12,
-    borderWidth: 2,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  subjectHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  subjectInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  subjectIcon: {
-    fontSize: 40,
-    marginRight: 15,
-  },
-  subjectDetails: {
-    flex: 1,
-  },
-  subjectName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-  subjectMeta: {
-    fontSize: 14,
-  },
-  expandIcon: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  startAllButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  startAllButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  topicsContainer: {
-    marginTop: 10,
-    gap: 10,
-  },
-  topicCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 15,
-    borderRadius: 8,
-    marginLeft: 20,
-  },
-  topicInfo: {
-    flex: 1,
-  },
-  topicName: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 5,
-  },
-  topicQuestions: {
-    fontSize: 14,
-  },
-  startButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 6,
-  },
-  startButtonText: {
-    color: "#fff",
+  gradeLabel: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  gradeValue: {
+    fontSize: 18,
+    fontWeight: "bold",
   },
   difficultyCard: {
     flexDirection: "row",
@@ -459,5 +527,132 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontWeight: "bold",
+  },
+  changeGradeButton: {
+    margin: 20,
+    marginTop: 0,
+    padding: 15,
+    borderRadius: 12,
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  changeGradeButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  infoBanner: {
+    flexDirection: "row",
+    margin: 20,
+    marginTop: 0,
+    padding: 15,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  infoIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 20,
+    color: "#1565C0",
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 999,
+  },
+  loadingCard: {
+    padding: 30,
+    borderRadius: 16,
+    alignItems: "center",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginTop: 15,
+  },
+  loadingSubtext: {
+    fontSize: 14,
+    marginTop: 5,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  subjectSection: {
+    marginBottom: 20,
+  },
+  subjectCard: {
+    margin: 20,
+    marginBottom: 15,
+    padding: 20,
+    borderRadius: 16,
+    borderLeftWidth: 6,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  subjectHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  subjectIcon: {
+    fontSize: 40,
+    marginRight: 15,
+  },
+  subjectInfo: {
+    flex: 1,
+  },
+  subjectName: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  subjectDescription: {
+    fontSize: 13,
+  },
+  arrowIcon: {
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  topicsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 20,
+    gap: 10,
+  },
+  topicChip: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 5,
+  },
+  topicName: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 3,
+  },
+  topicQuestions: {
+    fontSize: 11,
   },
 });

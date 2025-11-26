@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -11,15 +11,13 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
+import { AuthContext } from "../context/AuthContext";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const { theme } = useTheme();
+  const { login } = useContext(AuthContext);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -29,63 +27,42 @@ export default function LoginScreen({ navigation }) {
 
     setLoading(true);
     try {
-      const success = await login(email, password);
-
-      if (success) {
-        // Navigation will happen automatically via RootNavigator
-        // No need to navigate manually
+      const result = await login(email, password);
+      if (result.success) {
+        navigation.replace("MainTabs");
       } else {
-        Alert.alert("Error", "Invalid credentials");
+        Alert.alert("Login Failed", result.error || "Invalid credentials");
       }
     } catch (error) {
-      Alert.alert("Error", "Login failed. Please try again.");
+      Alert.alert("Error", "An error occurred during login");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.background }]}
-    >
+    <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={styles.scrollView}
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo/Header */}
           <View style={styles.header}>
             <Text style={styles.logo}>📚</Text>
-            <Text style={[styles.title, { color: theme.text }]}>
-              EduLearnZA
-            </Text>
-            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-              Master Your Grade 12 Exams
-            </Text>
+            <Text style={styles.title}>EduLearnZA</Text>
+            <Text style={styles.subtitle}>Welcome Back!</Text>
           </View>
 
-          {/* Login Form */}
-          <View style={[styles.form, { backgroundColor: theme.surface }]}>
-            <Text style={[styles.formTitle, { color: theme.text }]}>
-              Welcome Back!
-            </Text>
-
+          <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: theme.text }]}>Email</Text>
+              <Text style={styles.label}>Email</Text>
               <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.background,
-                    color: theme.text,
-                    borderColor: theme.border,
-                  },
-                ]}
+                style={styles.input}
                 placeholder="Enter your email"
-                placeholderTextColor={theme.textSecondary}
+                placeholderTextColor="#999"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -95,77 +72,41 @@ export default function LoginScreen({ navigation }) {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: theme.text }]}>
-                Password
-              </Text>
+              <Text style={styles.label}>Password</Text>
               <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.background,
-                    color: theme.text,
-                    borderColor: theme.border,
-                  },
-                ]}
+                style={styles.input}
                 placeholder="Enter your password"
-                placeholderTextColor={theme.textSecondary}
+                placeholderTextColor="#999"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
                 autoCapitalize="none"
-                autoCorrect={false}
               />
             </View>
 
             <TouchableOpacity
-              style={[styles.loginButton, { backgroundColor: theme.primary }]}
+              onPress={() => navigation.navigate("ForgotPassword")}
+            >
+              <Text style={styles.forgotPassword}>Forgot Password?</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
               onPress={handleLogin}
               disabled={loading}
             >
-              <Text style={styles.loginButtonText}>
+              <Text style={styles.buttonText}>
                 {loading ? "Logging in..." : "Login"}
               </Text>
             </TouchableOpacity>
 
             <View style={styles.signupContainer}>
-              <Text style={[styles.signupText, { color: theme.textSecondary }]}>
-                Don't have an account?{" "}
-              </Text>
+              <Text style={styles.signupText}>Don't have an account? </Text>
               <TouchableOpacity
                 onPress={() => navigation.navigate("SignUpScreen")}
               >
-                <Text style={[styles.signupLink, { color: theme.primary }]}>
-                  Sign Up
-                </Text>
+                <Text style={styles.signupLink}>Sign Up</Text>
               </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Features */}
-          <View style={styles.features}>
-            <View style={styles.feature}>
-              <Text style={styles.featureIcon}>✨</Text>
-              <Text
-                style={[styles.featureText, { color: theme.textSecondary }]}
-              >
-                500+ Practice Questions
-              </Text>
-            </View>
-            <View style={styles.feature}>
-              <Text style={styles.featureIcon}>📊</Text>
-              <Text
-                style={[styles.featureText, { color: theme.textSecondary }]}
-              >
-                Track Your Progress
-              </Text>
-            </View>
-            <View style={styles.feature}>
-              <Text style={styles.featureIcon}>🎯</Text>
-              <Text
-                style={[styles.featureText, { color: theme.textSecondary }]}
-              >
-                Exam-Focused Content
-              </Text>
             </View>
           </View>
         </ScrollView>
@@ -177,11 +118,12 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#F5F5F5",
   },
   keyboardView: {
     flex: 1,
   },
-  scrollContent: {
+  scrollView: {
     flexGrow: 1,
     justifyContent: "center",
     padding: 20,
@@ -191,87 +133,78 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logo: {
-    fontSize: 80,
+    fontSize: 60,
     marginBottom: 10,
   },
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    marginBottom: 8,
+    color: "#6200EE",
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 16,
-    textAlign: "center",
+    fontSize: 18,
+    color: "#666",
   },
   form: {
-    padding: 24,
-    borderRadius: 16,
-    marginBottom: 30,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  formTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 24,
-    textAlign: "center",
+    width: "100%",
   },
   inputContainer: {
     marginBottom: 20,
   },
   label: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
+    color: "#333",
     marginBottom: 8,
   },
   input: {
-    padding: 16,
+    backgroundColor: "#FFF",
     borderRadius: 12,
+    padding: 15,
     fontSize: 16,
     borderWidth: 1,
+    borderColor: "#E0E0E0",
   },
-  loginButton: {
-    padding: 16,
+  forgotPassword: {
+    color: "#6200EE",
+    textAlign: "right",
+    marginBottom: 20,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  button: {
+    backgroundColor: "#6200EE",
     borderRadius: 12,
+    padding: 16,
     alignItems: "center",
-    marginTop: 10,
+    marginBottom: 20,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
-  loginButtonText: {
-    color: "#fff",
+  buttonDisabled: {
+    backgroundColor: "#9E9E9E",
+  },
+  buttonText: {
+    color: "#FFF",
     fontSize: 18,
     fontWeight: "bold",
   },
   signupContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 20,
+    alignItems: "center",
   },
   signupText: {
     fontSize: 14,
+    color: "#666",
   },
   signupLink: {
     fontSize: 14,
+    color: "#6200EE",
     fontWeight: "bold",
-  },
-  features: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    flexWrap: "wrap",
-  },
-  feature: {
-    alignItems: "center",
-    width: "30%",
-    marginBottom: 10,
-  },
-  featureIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  featureText: {
-    fontSize: 12,
-    textAlign: "center",
   },
 });

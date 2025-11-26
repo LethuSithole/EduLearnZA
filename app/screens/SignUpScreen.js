@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -11,25 +11,18 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
+import { AuthContext } from "../context/AuthContext";
 
-export default function SignUpScreen({ navigation }) {
+export default function SignupScreen({ navigation }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [grade, setGrade] = useState("12");
   const [loading, setLoading] = useState(false);
-  const { signup } = useAuth();
-  const themeContext = useTheme();
-  const theme = themeContext?.theme || {
-    background: "#f5f5f5",
-    surface: "#ffffff",
-    text: "#000000",
-    textSecondary: "#666666",
-    primary: "#6200EE",
-    border: "#e0e0e0",
-  };
+  const { signup } = useContext(AuthContext);
+
+  const grades = ["8", "9", "10", "11", "12"];
 
   const handleSignUp = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -47,99 +40,71 @@ export default function SignUpScreen({ navigation }) {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Error", "Please enter a valid email address");
+      return;
+    }
+
     setLoading(true);
     try {
-      const success = await signup(name, email, password);
-
-      if (success) {
-        Alert.alert("Success", "Account created successfully!", [
-          {
-            text: "OK",
-            onPress: () => navigation.replace("MainTabs"),
-          },
-        ]);
+      const result = await signup(email, password, name, grade);
+      if (result.success) {
+        Alert.alert("Success", "Account created successfully!");
       } else {
-        Alert.alert("Error", "Sign up failed");
+        Alert.alert(
+          "Sign Up Failed",
+          result.error || "Could not create account"
+        );
       }
     } catch (error) {
-      Alert.alert("Error", "Sign up failed. Please try again.");
+      Alert.alert("Error", "An error occurred during sign up");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.background }]}
-    >
+    <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={styles.scrollView}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
               onPress={() => navigation.goBack()}
             >
-              <Text style={[styles.backButtonText, { color: theme.primary }]}>
-                ← Back
-              </Text>
+              <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
             <Text style={styles.logo}>📚</Text>
-            <Text style={[styles.title, { color: theme.text }]}>
-              Join EduLearnZA
-            </Text>
-            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-              Start your learning journey today
-            </Text>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Join EduLearnZA Today!</Text>
           </View>
 
-          {/* Sign Up Form */}
-          <View style={[styles.form, { backgroundColor: theme.surface }]}>
-            <Text style={[styles.formTitle, { color: theme.text }]}>
-              Create Account
-            </Text>
-
+          <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: theme.text }]}>
-                Full Name
-              </Text>
+              <Text style={styles.label}>Full Name</Text>
               <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.background,
-                    color: theme.text,
-                    borderColor: theme.border,
-                  },
-                ]}
+                style={styles.input}
                 placeholder="Enter your full name"
-                placeholderTextColor={theme.textSecondary}
+                placeholderTextColor="#999"
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
-                autoCorrect={false}
               />
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: theme.text }]}>Email</Text>
+              <Text style={styles.label}>Email</Text>
               <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.background,
-                    color: theme.text,
-                    borderColor: theme.border,
-                  },
-                ]}
+                style={styles.input}
                 placeholder="Enter your email"
-                placeholderTextColor={theme.textSecondary}
+                placeholderTextColor="#999"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -149,69 +114,70 @@ export default function SignUpScreen({ navigation }) {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: theme.text }]}>
-                Password
-              </Text>
+              <Text style={styles.label}>Select Your Grade</Text>
+              <View style={styles.gradeContainer}>
+                {grades.map((g) => (
+                  <TouchableOpacity
+                    key={g}
+                    style={[
+                      styles.gradeButton,
+                      grade === g && styles.gradeButtonActive,
+                    ]}
+                    onPress={() => setGrade(g)}
+                  >
+                    <Text
+                      style={[
+                        styles.gradeButtonText,
+                        grade === g && styles.gradeButtonTextActive,
+                      ]}
+                    >
+                      {g}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Password</Text>
               <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.background,
-                    color: theme.text,
-                    borderColor: theme.border,
-                  },
-                ]}
-                placeholder="Create a password (min. 6 characters)"
-                placeholderTextColor={theme.textSecondary}
+                style={styles.input}
+                placeholder="Create a password"
+                placeholderTextColor="#999"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
                 autoCapitalize="none"
-                autoCorrect={false}
               />
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: theme.text }]}>
-                Confirm Password
-              </Text>
+              <Text style={styles.label}>Confirm Password</Text>
               <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.background,
-                    color: theme.text,
-                    borderColor: theme.border,
-                  },
-                ]}
+                style={styles.input}
                 placeholder="Re-enter your password"
-                placeholderTextColor={theme.textSecondary}
+                placeholderTextColor="#999"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry
                 autoCapitalize="none"
-                autoCorrect={false}
               />
             </View>
 
             <TouchableOpacity
-              style={[styles.signupButton, { backgroundColor: theme.primary }]}
+              style={[styles.button, loading && styles.buttonDisabled]}
               onPress={handleSignUp}
               disabled={loading}
             >
-              <Text style={styles.signupButtonText}>
+              <Text style={styles.buttonText}>
                 {loading ? "Creating Account..." : "Sign Up"}
               </Text>
             </TouchableOpacity>
 
             <View style={styles.loginContainer}>
-              <Text style={[styles.loginText, { color: theme.textSecondary }]}>
-                Already have an account?{" "}
-              </Text>
+              <Text style={styles.loginText}>Already have an account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-                <Text style={[styles.loginLink, { color: theme.primary }]}>
-                  Login
-                </Text>
+                <Text style={styles.loginLink}>Login</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -222,92 +188,64 @@ export default function SignUpScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 20,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 30,
-    marginTop: 20,
-  },
-  backButton: {
-    alignSelf: "flex-start",
-    marginBottom: 20,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  logo: {
-    fontSize: 60,
-    marginBottom: 10,
-  },
+  container: { flex: 1, backgroundColor: "#F5F5F5" },
+  keyboardView: { flex: 1 },
+  scrollView: { flexGrow: 1, padding: 20 },
+  header: { alignItems: "center", marginBottom: 30, marginTop: 20 },
+  backButton: { alignSelf: "flex-start", marginBottom: 20 },
+  backButtonText: { fontSize: 16, color: "#6200EE", fontWeight: "600" },
+  logo: { fontSize: 50, marginBottom: 10 },
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    marginBottom: 8,
+    color: "#6200EE",
+    marginBottom: 5,
   },
-  subtitle: {
-    fontSize: 16,
-    textAlign: "center",
-  },
-  form: {
-    padding: 24,
-    borderRadius: 16,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  formTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 24,
-    textAlign: "center",
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
+  subtitle: { fontSize: 16, color: "#666" },
+  form: { width: "100%" },
+  inputContainer: { marginBottom: 20 },
+  label: { fontSize: 16, fontWeight: "600", color: "#333", marginBottom: 8 },
   input: {
-    padding: 16,
+    backgroundColor: "#FFF",
     borderRadius: 12,
+    padding: 15,
     fontSize: 16,
     borderWidth: 1,
+    borderColor: "#E0E0E0",
   },
-  signupButton: {
-    padding: 16,
+  gradeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  gradeButton: {
+    flex: 1,
+    backgroundColor: "#FFF",
     borderRadius: 12,
+    padding: 15,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#E0E0E0",
+  },
+  gradeButtonActive: { backgroundColor: "#6200EE", borderColor: "#6200EE" },
+  gradeButtonText: { fontSize: 16, fontWeight: "600", color: "#333" },
+  gradeButtonTextActive: { color: "#FFF" },
+  button: {
+    backgroundColor: "#6200EE",
+    borderRadius: 12,
+    padding: 16,
     alignItems: "center",
     marginTop: 10,
+    marginBottom: 20,
+    elevation: 3,
   },
-  signupButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
+  buttonDisabled: { backgroundColor: "#9E9E9E" },
+  buttonText: { color: "#FFF", fontSize: 18, fontWeight: "bold" },
   loginContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 20,
+    alignItems: "center",
   },
-  loginText: {
-    fontSize: 14,
-  },
-  loginLink: {
-    fontSize: 14,
-    fontWeight: "bold",
-  },
+  loginText: { fontSize: 14, color: "#666" },
+  loginLink: { fontSize: 14, color: "#6200EE", fontWeight: "bold" },
 });

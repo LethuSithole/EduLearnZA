@@ -2,75 +2,69 @@ import React from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
+  StyleSheet,
   Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 
 const { width, height } = Dimensions.get("window");
 
 export default function WelcomeScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={["#6200EE", "#BB86FC", "#03DAC6"]}
-        style={styles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.content}>
-          {/* Logo/Icon */}
-          <View style={styles.logoContainer}>
-            <Text style={styles.logoIcon}>🎓</Text>
-            <Text style={styles.logoText}>EduLearnZA</Text>
+      <View style={styles.content}>
+        {/* Logo Section */}
+        <View style={styles.logoSection}>
+          <Text style={styles.logo}>📚</Text>
+          <Text style={styles.title}>EduLearnZA</Text>
+          <Text style={styles.subtitle}>Your Gateway to Quality Education</Text>
+        </View>
+
+        {/* Features Section */}
+        <View style={styles.featuresSection}>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureIcon}>📖</Text>
+            <Text style={styles.featureText}>Interactive Learning</Text>
           </View>
-
-          {/* Welcome Text */}
-          <View style={styles.textContainer}>
-            <Text style={styles.welcomeTitle}>Welcome to EduLearnZA</Text>
-            <Text style={styles.welcomeSubtitle}>
-              Your personalized learning companion for South African students
-            </Text>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureIcon}>🎯</Text>
+            <Text style={styles.featureText}>Practice Tests</Text>
           </View>
-
-          {/* Features */}
-          <View style={styles.featuresContainer}>
-            <View style={styles.feature}>
-              <Text style={styles.featureIcon}>📚</Text>
-              <Text style={styles.featureText}>Interactive Learning</Text>
-            </View>
-            <View style={styles.feature}>
-              <Text style={styles.featureIcon}>📝</Text>
-              <Text style={styles.featureText}>Practice Tests</Text>
-            </View>
-            <View style={styles.feature}>
-              <Text style={styles.featureIcon}>📊</Text>
-              <Text style={styles.featureText}>Track Progress</Text>
-            </View>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureIcon}>🤖</Text>
+            <Text style={styles.featureText}>AI Study Assistant</Text>
           </View>
-
-          {/* Buttons */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.getStartedButton}
-              onPress={() => navigation.navigate("SignUpScreen")}
-            >
-              <Text style={styles.getStartedButtonText}>Get Started</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={() => navigation.navigate("Login")}
-            >
-              <Text style={styles.loginButtonText}>
-                Already have an account? Log In
-              </Text>
-            </TouchableOpacity>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureIcon}>🤟</Text>
+            <Text style={styles.featureText}>Sign Language</Text>
           </View>
         </View>
-      </LinearGradient>
+
+        {/* Buttons Section */}
+        <View style={styles.buttonsSection}>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => navigation.navigate("Login")}
+          >
+            <Text style={styles.primaryButtonText}>Login</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate("SignUpScreen")}
+          >
+            <Text style={styles.secondaryButtonText}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Empowering South African Students 🇿🇦
+          </Text>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -78,63 +72,49 @@ export default function WelcomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  gradient: {
-    flex: 1,
+    backgroundColor: "#6200EE",
   },
   content: {
     flex: 1,
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 50,
-    paddingHorizontal: 30,
+    padding: 20,
   },
-  logoContainer: {
+  logoSection: {
     alignItems: "center",
-    marginTop: 40,
+    marginTop: height * 0.08,
   },
-  logoIcon: {
+  logo: {
     fontSize: 80,
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 42,
+    fontWeight: "bold",
+    color: "#fff",
     marginBottom: 10,
-  },
-  logoText: {
-    fontSize: 36,
-    fontWeight: "bold",
-    color: "#fff",
-    textShadowColor: "rgba(0, 0, 0, 0.3)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  textContainer: {
-    alignItems: "center",
-    marginTop: 20,
-  },
-  welcomeTitle: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#fff",
     textAlign: "center",
-    marginBottom: 15,
-    textShadowColor: "rgba(0, 0, 0, 0.2)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
   },
-  welcomeSubtitle: {
+  subtitle: {
     fontSize: 18,
-    color: "#fff",
+    color: "#E8DEFF",
     textAlign: "center",
-    lineHeight: 26,
-    opacity: 0.95,
+    paddingHorizontal: 20,
   },
-  featuresContainer: {
+  featuresSection: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-around",
-    width: "100%",
     marginVertical: 30,
   },
-  feature: {
+  featureItem: {
+    width: "45%",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 16,
+    padding: 20,
     alignItems: "center",
-    flex: 1,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   featureIcon: {
     fontSize: 40,
@@ -143,36 +123,49 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: 14,
     color: "#fff",
-    textAlign: "center",
     fontWeight: "600",
+    textAlign: "center",
   },
-  buttonContainer: {
-    width: "100%",
-    gap: 15,
+  buttonsSection: {
+    marginBottom: 20,
   },
-  getStartedButton: {
+  primaryButton: {
     backgroundColor: "#fff",
-    paddingVertical: 18,
-    borderRadius: 12,
+    borderRadius: 16,
+    padding: 18,
     alignItems: "center",
+    marginBottom: 15,
     elevation: 5,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 5,
+    shadowRadius: 8,
   },
-  getStartedButtonText: {
+  primaryButtonText: {
     color: "#6200EE",
     fontSize: 18,
     fontWeight: "bold",
   },
-  loginButton: {
-    paddingVertical: 15,
+  secondaryButton: {
+    backgroundColor: "transparent",
+    borderRadius: 16,
+    padding: 18,
     alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#fff",
   },
-  loginButtonText: {
+  secondaryButtonText: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  footer: {
+    alignItems: "center",
+    paddingBottom: 10,
+  },
+  footerText: {
+    fontSize: 14,
+    color: "#E8DEFF",
+    textAlign: "center",
   },
 });
