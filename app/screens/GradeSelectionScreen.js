@@ -3,40 +3,106 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
+  TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
 import { AuthContext } from "../context/AuthContext";
+import axios from "axios";
 
-export default function GradeSelectionScreen({ navigation }) {
+const API_URL = "http://192.168.1.100:5000/api";
+
+// Create axios instance with custom config
+const api = axios.create({
+  baseURL: API_URL,
+  timeout: 120000, // 2 minutes
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+export default function GradeSelectionScreen({ route, navigation }) {
   const { theme } = useTheme();
-  const { updateUser } = useContext(AuthContext);
-  const [selectedGrade, setSelectedGrade] = useState(null);
+  const { user, updateUser } = useContext(AuthContext);
+  const { fromScreen } = route.params || {};
+  const [selectedGrade, setSelectedGrade] = useState(
+    user?.grade?.toString() || ""
+  );
+  const [loading, setLoading] = useState(false);
 
   const grades = [
-    { id: "8", name: "Grade 8", icon: "📗", description: "Foundation year" },
-    { id: "9", name: "Grade 9", icon: "📘", description: "Building blocks" },
-    { id: "10", name: "Grade 10", icon: "📙", description: "FET Phase start" },
-    { id: "11", name: "Grade 11", icon: "📕", description: "Pre-matric year" },
-    { id: "12", name: "Grade 12", icon: "📔", description: "Matric year" },
+    {
+      value: "8",
+      label: "Grade 8",
+      icon: "🎒",
+      description: "Foundation Phase",
+    },
+    { value: "9", label: "Grade 9", icon: "📚", description: "Intermediate" },
+    { value: "10", label: "Grade 10", icon: "📖", description: "FET Phase" },
+    { value: "11", label: "Grade 11", icon: "📝", description: "Pre-Matric" },
+    { value: "12", label: "Grade 12", icon: "🎓", description: "Matric Year" },
   ];
 
-  const handleContinue = () => {
-    if (selectedGrade) {
-      updateUser({ grade: selectedGrade });
+  const handleGradeSelect = (grade) => {
+    setSelectedGrade(grade);
+  };
+
+  const handleConfirm = async () => {
+    if (!selectedGrade) {
+      Alert.alert("Select Grade", "Please select your grade to continue.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Update grade on backend with timeout
+      const response = await api.put(
+        `/users/profile`,
+        { grade: parseInt(selectedGrade) },
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+
+      // Update local user context
+      await updateUser({ ...user, grade: parseInt(selectedGrade) });
+
       Alert.alert(
-        "Grade Updated! ✅",
-        `Your grade has been set to Grade ${selectedGrade}`,
+        "Success! 🎉",
+        `Your grade has been updated to Grade ${selectedGrade}`,
         [
           {
             text: "OK",
-            onPress: () => navigation.navigate("MainTabs"),
+            onPress: () => {
+              if (fromScreen === "Home") {
+                navigation.goBack();
+              } else {
+                navigation.navigate("Home");
+              }
+            },
           },
         ]
       );
+    } catch (error) {
+      console.error("Error updating grade:", error);
+      Alert.alert("Error", "Failed to update grade. Please try again.", [
+        {
+          text: "OK",
+          onPress: () => {
+            // Still update locally even if API fails
+            updateUser({ ...user, grade: parseInt(selectedGrade) });
+            navigation.goBack();
+          },
+        },
+      ]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,85 +111,131 @@ export default function GradeSelectionScreen({ navigation }) {
       style={[styles.container, { backgroundColor: theme.background }]}
     >
       <View style={[styles.header, { backgroundColor: theme.surface }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={[styles.backButtonText, { color: theme.primary }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={[styles.backButton, { color: theme.primary }]}>
             ← Back
           </Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.text }]}>
-          Select Grade
+          Select Your Grade
+        </Text>
+        <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
+          Choose your current grade level
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.icon}>🎓</Text>
-        <Text style={[styles.title, { color: theme.text }]}>
-          Select Your Grade
-        </Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          Choose your current grade to get personalized content
-        </Text>
-
-        <View style={styles.gradesContainer}>
-          {grades.map((grade) => (
-            <TouchableOpacity
-              key={grade.id}
-              style={[
-                styles.gradeCard,
-                {
-                  backgroundColor: theme.surface,
-                  borderColor:
-                    selectedGrade === grade.id ? theme.primary : theme.border,
-                  borderWidth: selectedGrade === grade.id ? 3 : 1,
-                },
-              ]}
-              onPress={() => setSelectedGrade(grade.id)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.gradeIcon}>{grade.icon}</Text>
-              <View style={styles.gradeInfo}>
-                <Text style={[styles.gradeName, { color: theme.text }]}>
-                  {grade.name}
-                </Text>
-                <Text
-                  style={[
-                    styles.gradeDescription,
-                    { color: theme.textSecondary },
-                  ]}
-                >
-                  {grade.description}
-                </Text>
-              </View>
-              {selectedGrade === grade.id && (
-                <View
-                  style={[styles.checkmark, { backgroundColor: theme.primary }]}
-                >
-                  <Text style={styles.checkmarkText}>✓</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
+      <ScrollView style={styles.content}>
+        <View style={styles.infoBox}>
+          <Text style={styles.infoIcon}>ℹ️</Text>
+          <Text style={[styles.infoText, { color: theme.text }]}>
+            Selecting your grade helps us provide you with appropriate study
+            materials and questions tailored to your level.
+          </Text>
         </View>
 
-        <TouchableOpacity
+        <View style={styles.gradesContainer}>
+          {grades.map((grade) => {
+            const isSelected = selectedGrade === grade.value;
+
+            return (
+              <TouchableOpacity
+                key={grade.value}
+                style={[
+                  styles.gradeCard,
+                  {
+                    backgroundColor: isSelected
+                      ? theme.primary + "20"
+                      : theme.surface,
+                    borderColor: isSelected ? theme.primary : theme.border,
+                    borderWidth: isSelected ? 3 : 1,
+                  },
+                ]}
+                onPress={() => handleGradeSelect(grade.value)}
+              >
+                <View style={styles.gradeCardContent}>
+                  <Text style={styles.gradeIcon}>{grade.icon}</Text>
+                  <View style={styles.gradeInfo}>
+                    <Text
+                      style={[
+                        styles.gradeLabel,
+                        {
+                          color: isSelected ? theme.primary : theme.text,
+                          fontWeight: isSelected ? "bold" : "600",
+                        },
+                      ]}
+                    >
+                      {grade.label}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.gradeDescription,
+                        { color: theme.textSecondary },
+                      ]}
+                    >
+                      {grade.description}
+                    </Text>
+                  </View>
+                  {isSelected && (
+                    <View
+                      style={[
+                        styles.checkmark,
+                        { backgroundColor: theme.primary },
+                      ]}
+                    >
+                      <Text style={styles.checkmarkText}>✓</Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Tips Section */}
+        <View
           style={[
-            styles.continueButton,
+            styles.tipsBox,
             {
-              backgroundColor: selectedGrade ? theme.primary : theme.border,
-              opacity: selectedGrade ? 1 : 0.5,
+              backgroundColor: theme.primary + "15",
+              borderColor: theme.primary,
             },
           ]}
-          onPress={handleContinue}
-          disabled={!selectedGrade}
         >
-          <Text style={styles.continueButtonText}>
-            {selectedGrade ? "Continue" : "Select a grade"}
+          <Text style={styles.tipsIcon}>💡</Text>
+          <Text style={[styles.tipsTitle, { color: theme.primary }]}>
+            Why is this important?
           </Text>
-        </TouchableOpacity>
+          <Text style={[styles.tipsText, { color: theme.text }]}>
+            • Get questions matching your curriculum{"\n"}• Access
+            grade-appropriate resources{"\n"}• Track progress at your level
+            {"\n"}• Prepare for your specific exams{"\n"}• You can change this
+            anytime in Settings
+          </Text>
+        </View>
       </ScrollView>
+
+      {/* Confirm Button */}
+      <View style={[styles.footer, { backgroundColor: theme.surface }]}>
+        <TouchableOpacity
+          style={[
+            styles.confirmButton,
+            { backgroundColor: theme.primary },
+            !selectedGrade && styles.confirmButtonDisabled,
+          ]}
+          onPress={handleConfirm}
+          disabled={!selectedGrade || loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.confirmButtonText}>
+              {selectedGrade
+                ? `Confirm Grade ${selectedGrade}`
+                : "Select a Grade"}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -133,103 +245,117 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
     padding: 20,
     elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   backButton: {
-    marginRight: 15,
-  },
-  backButtonText: {
     fontSize: 16,
     fontWeight: "600",
+    marginBottom: 15,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
+    marginBottom: 5,
+  },
+  headerSubtitle: {
+    fontSize: 14,
   },
   content: {
+    flex: 1,
     padding: 20,
-    alignItems: "center",
   },
-  icon: {
-    fontSize: 80,
-    marginTop: 20,
-    marginBottom: 20,
+  infoBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: 15,
+    backgroundColor: "#E3F2FD",
+    borderRadius: 12,
+    marginBottom: 25,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 10,
-    textAlign: "center",
+  infoIcon: {
+    fontSize: 24,
+    marginRight: 12,
   },
-  subtitle: {
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: 30,
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
   },
   gradesContainer: {
-    width: "100%",
-    gap: 12,
+    gap: 15,
   },
   gradeCard: {
+    borderRadius: 12,
+    elevation: 2,
+    overflow: "hidden",
+  },
+  gradeCardContent: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    borderRadius: 16,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    padding: 20,
   },
   gradeIcon: {
-    fontSize: 30,
+    fontSize: 40,
     marginRight: 15,
   },
   gradeInfo: {
     flex: 1,
   },
-  gradeName: {
-    fontSize: 20,
-    fontWeight: "600",
+  gradeLabel: {
+    fontSize: 18,
     marginBottom: 4,
   },
   gradeDescription: {
-    fontSize: 14,
+    fontSize: 13,
   },
   checkmark: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
   },
   checkmarkText: {
-    color: "#fff",
-    fontSize: 16,
+    color: "#FFF",
+    fontSize: 18,
     fontWeight: "bold",
   },
-  continueButton: {
-    width: "100%",
-    padding: 18,
+  tipsBox: {
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 2,
+    marginTop: 25,
+  },
+  tipsIcon: {
+    fontSize: 32,
+    marginBottom: 10,
+  },
+  tipsTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  tipsText: {
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  footer: {
+    padding: 20,
+    elevation: 8,
+  },
+  confirmButton: {
+    paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
-    marginTop: 30,
     elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
-  continueButtonText: {
-    color: "#fff",
-    fontSize: 18,
+  confirmButtonDisabled: {
+    opacity: 0.5,
+  },
+  confirmButtonText: {
+    color: "#FFF",
+    fontSize: 16,
     fontWeight: "bold",
   },
 });

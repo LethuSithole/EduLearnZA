@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
+const axios = require("axios");
 require("dotenv").config();
 
 const app = express();
@@ -291,6 +292,62 @@ app.post("/api/auth/reset-password", async (req, res) => {
     res.status(500).json({
       success: false,
       error: "An error occurred",
+    });
+  }
+});
+
+// Chatbot Route
+app.post("/api/chatbot", async (req, res) => {
+  try {
+    const { message, context } = req.body;
+
+    const systemPrompt = `You are EduBot, an AI tutor for South African high school students (Grades 8-12). 
+    You help with:
+    - Mathematics (Algebra, Calculus, Geometry, Trigonometry, Statistics)
+    - Physical Sciences (Physics, Chemistry)
+    - Life Sciences (Biology)
+    - Study techniques and exam preparation
+    
+    Student context: Grade ${context?.grade || "unknown"}, Subjects: ${
+      context?.subjects?.join(", ") || "unknown"
+    }
+    
+    Be encouraging, clear, and educational. Break down complex topics. Use examples when helpful.
+    Keep responses concise but thorough.`;
+
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message },
+        ],
+        max_tokens: 500,
+        temperature: 0.7,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const reply = response.data.choices[0].message.content;
+
+    res.json({ reply });
+  } catch (error) {
+    console.error("Chatbot error:", error.response?.data || error.message);
+
+    if (error.response?.status === 429) {
+      return res
+        .status(429)
+        .json({ error: "Too many requests. Please try again in a moment." });
+    }
+
+    res.status(500).json({
+      error: "Failed to get response. Please try again.",
     });
   }
 });

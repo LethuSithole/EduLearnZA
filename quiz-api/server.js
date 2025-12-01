@@ -1,49 +1,69 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config();
+const dotenv = require("dotenv");
+const path = require("path");
+
+dotenv.config();
 
 const app = express();
 
 // Middleware
-app.use(
-  cors({
-    origin: "*", // Allow all origins for development
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Logging middleware
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  next();
-});
+// Serve static files
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // MongoDB Connection
-const MONGODB_URI =
-  process.env.MONGODB_URI || "mongodb://localhost:27017/edulearnza";
-
 mongoose
-  .connect(MONGODB_URI)
+  .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/edulearnza", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log("✅ MongoDB connected successfully"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// Routes
+// Import Routes
+const userRoutes = require("./routes/users");
+const questionRoutes = require("./routes/questions");
+const progressRoutes = require("./routes/progress");
+
+// Use Routes
+app.use("/api/users", userRoutes);
+app.use(questionRoutes);
+app.use("/api/progress", progressRoutes);
+
+// Root endpoint
 app.get("/", (req, res) => {
-  res.json({ message: "EduLearnZA API is running", status: "OK" });
+  res.json({
+    message: "EduLearnZA API Server",
+    version: "1.0.0",
+    endpoints: {
+      users: "/api/users",
+      questions: "/api/questions",
+      progress: "/api/progress",
+    },
+  });
 });
 
-const questionsRouter = require("./routes/questions");
-app.use("/api/questions", questionsRouter);
+// Health check
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "OK",
+    timestamp: new Date(),
+    uptime: process.uptime(),
+  });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error("Error:", err);
+  console.error("Server Error:", err);
   res.status(500).json({
     success: false,
-    error: err.message || "Internal server error",
+    error: "Internal server error",
+    message: err.message,
   });
 });
 
@@ -52,11 +72,16 @@ app.use((req, res) => {
   res.status(404).json({
     success: false,
     error: "Route not found",
+    path: req.path,
   });
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, "0.0.0.0", () => {
+
+app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 API available at http://localhost:${PORT}/api`);
+  console.log(`📁 Uploads available at http://localhost:${PORT}/uploads`);
 });
+
+module.exports = app;

@@ -1,7 +1,19 @@
 import React, { createContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 export const AuthContext = createContext();
+
+const API_URL = "http://192.168.1.100:5000";
+
+// Create axios instance
+const api = axios.create({
+  baseURL: API_URL,
+  timeout: 30000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -15,7 +27,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const userData = await AsyncStorage.getItem("user");
       if (userData) {
-        setUser(JSON.parse(userData));
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
       }
     } catch (error) {
       console.error("Error checking user:", error);
@@ -26,39 +39,73 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // Simulate login - replace with actual API call
-      const userData = {
-        id: "1",
-        name: "Test User",
-        email: email,
-        grade: "12",
-      };
+      const response = await api.post("/api/users/login", {
+        email,
+        password,
+      });
 
-      await AsyncStorage.setItem("user", JSON.stringify(userData));
-      setUser(userData);
-      return { success: true };
+      if (response.data && response.data.token) {
+        const userData = response.data;
+        await AsyncStorage.setItem("user", JSON.stringify(userData));
+        setUser(userData);
+        return { success: true };
+      } else {
+        throw new Error("Invalid response from server");
+      }
     } catch (error) {
       console.error("Login error:", error);
-      return { success: false, error: "Login failed" };
+
+      let errorMessage = "Login failed. Please try again.";
+
+      if (error.response) {
+        // Server responded with error
+        errorMessage =
+          error.response.data?.message ||
+          error.response.data?.error ||
+          errorMessage;
+      } else if (error.request) {
+        // Request made but no response
+        errorMessage =
+          "Cannot connect to server. Please check your internet connection.";
+      } else {
+        // Other errors
+        errorMessage = error.message || errorMessage;
+      }
+
+      return { success: false, message: errorMessage };
     }
   };
 
-  const signup = async (email, password, name, grade) => {
+  const register = async (userData) => {
     try {
-      // Simulate signup - replace with actual API call
-      const userData = {
-        id: Date.now().toString(),
-        name: name,
-        email: email,
-        grade: grade,
-      };
+      const response = await api.post("/api/users/register", userData);
 
-      await AsyncStorage.setItem("user", JSON.stringify(userData));
-      setUser(userData);
-      return { success: true };
+      if (response.data && response.data.token) {
+        const user = response.data;
+        await AsyncStorage.setItem("user", JSON.stringify(user));
+        setUser(user);
+        return { success: true };
+      } else {
+        throw new Error("Invalid response from server");
+      }
     } catch (error) {
-      console.error("Signup error:", error);
-      return { success: false, error: "Signup failed" };
+      console.error("Register error:", error);
+
+      let errorMessage = "Registration failed. Please try again.";
+
+      if (error.response) {
+        errorMessage =
+          error.response.data?.message ||
+          error.response.data?.error ||
+          errorMessage;
+      } else if (error.request) {
+        errorMessage =
+          "Cannot connect to server. Please check your internet connection.";
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+
+      return { success: false, message: errorMessage };
     }
   };
 
@@ -68,18 +115,18 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
     } catch (error) {
       console.error("Logout error:", error);
+      throw error;
     }
   };
 
   const updateUser = async (updatedData) => {
     try {
-      const updatedUser = { ...user, ...updatedData };
-      await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      return { success: true };
+      const newUserData = { ...user, ...updatedData };
+      await AsyncStorage.setItem("user", JSON.stringify(newUserData));
+      setUser(newUserData);
     } catch (error) {
       console.error("Update user error:", error);
-      return { success: false, error: "Update failed" };
+      throw error;
     }
   };
 
@@ -89,7 +136,7 @@ export const AuthProvider = ({ children }) => {
         user,
         loading,
         login,
-        signup,
+        register,
         logout,
         updateUser,
       }}

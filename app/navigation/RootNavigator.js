@@ -1,78 +1,127 @@
 import React, { useContext } from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { AuthContext } from "../context/AuthContext";
 
 // Auth Screens
-import WelcomeScreen from "../screens/WelcomeScreen";
 import LoginScreen from "../screens/LoginScreen";
-import SignupScreen from "../screens/SignupScreen"; // Changed from SignUpScreen
-import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
+import RegisterScreen from "../screens/RegisterScreen";
 
 // Main Screens
-import MainTab from "./MainTab";
-import SubjectDetailsScreen from "../screens/SubjectDetailsScreen";
-import LearnMoreScreen from "../screens/LearnMoreScreen";
-import QuizScreen from "../screens/QuizScreen";
-import GradeSelectionScreen from "../screens/GradeSelectionScreen";
-import AllSubjectsTestScreen from "../screens/AllSubjectsTestScreen";
-import ChatbotScreen from "../screens/ChatbotScreen";
-import SignLanguageScreen from "../screens/SignLanguageScreen";
-import EditProfileScreen from "../screens/EditProfileScreen";
-import TopicQuestionsScreen from "../screens/TopicQuestionsScreen";
+import HomeScreen from "../screens/HomeScreen";
+import ProgressScreen from "../screens/ProgressScreen";
+import ResourcesScreen from "../screens/ResourcesScreen";
+import ProfileScreen from "../screens/ProfileScreen";
 
+// Additional Screens (Hidden from tabs)
+import QuizScreen from "../screens/QuizScreen";
+import EditProfileScreen from "../screens/EditProfileScreen";
+import SignLanguageScreen from "../screens/SignLanguageScreen";
+import StudyGuideContentScreen from "../screens/StudyGuideContentScreen";
+
+const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+
+function TabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: "#2196F3",
+        tabBarInactiveTintColor: "#666",
+        tabBarStyle: {
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+      }}
+    >
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
+          tabBarIcon: ({ color }) => <TabIcon icon="🏠" color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Progress"
+        component={ProgressScreen}
+        options={{
+          tabBarIcon: ({ color }) => <TabIcon icon="📊" color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Resources"
+        component={ResourcesScreen}
+        options={{
+          tabBarIcon: ({ color }) => <TabIcon icon="📚" color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: ({ color }) => <TabIcon icon="👤" color={color} />,
+        }}
+      />
+
+      {/* Hidden screens */}
+      <Tab.Screen
+        name="Quiz"
+        component={QuizScreen}
+        options={{
+          tabBarButton: () => null,
+        }}
+      />
+      <Tab.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{
+          tabBarButton: () => null,
+        }}
+      />
+      <Tab.Screen
+        name="SignLanguage"
+        component={SignLanguageScreen}
+        options={{
+          tabBarButton: () => null,
+        }}
+      />
+      <Tab.Screen
+        name="StudyGuideContent"
+        component={StudyGuideContentScreen}
+        options={{
+          tabBarButton: () => null,
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+const TabIcon = ({ icon, color }) => {
+  return <span style={{ fontSize: 24, color }}>{icon}</span>;
+};
 
 export default function RootNavigator() {
   const { user, loading } = useContext(AuthContext);
 
   if (loading) {
-    return null; // or a loading screen
+    return null;
   }
 
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      {!user ? (
-        // Auth Stack
-        <>
-          <Stack.Screen name="Welcome" component={WelcomeScreen} />
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="SignUpScreen" component={SignupScreen} />
-          <Stack.Screen
-            name="ForgotPassword"
-            component={ForgotPasswordScreen}
-          />
-        </>
-      ) : (
-        // Main Stack
-        <>
-          <Stack.Screen name="MainTabs" component={MainTab} />
-          <Stack.Screen
-            name="SubjectDetails"
-            component={SubjectDetailsScreen}
-          />
-          <Stack.Screen name="LearnMore" component={LearnMoreScreen} />
-          <Stack.Screen name="Quiz" component={QuizScreen} />
-          <Stack.Screen
-            name="GradeSelection"
-            component={GradeSelectionScreen}
-          />
-          <Stack.Screen
-            name="AllSubjectsTest"
-            component={AllSubjectsTestScreen}
-          />
-          <Stack.Screen name="Chatbot" component={ChatbotScreen} />
-          <Stack.Screen name="SignLanguage" component={SignLanguageScreen} />
-          <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-          <Stack.Screen
-            name="TopicQuestions"
-            component={TopicQuestionsScreen}
-          />
-        </>
-      )}
-    </Stack.Navigator>
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!user ? (
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+          </>
+        ) : (
+          <Stack.Screen name="Main" component={TabNavigator} />
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
