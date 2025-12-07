@@ -1,3 +1,6 @@
 {
-  "urlRandomness": "08ETR4o"
+  "urlRandomness": "08ETR4o",
+  "dev": true,
+  "minify": false,
+  "https": false
 }
